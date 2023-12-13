@@ -1,0 +1,16 @@
+{
+  "PostgreSQL": {
+    "POSTGRES_HOST" : "payspaceeval_app_host",
+    "POSTGRES_DB"   : "payspaceeval_app_db",
+    "POSTGRES_USER" : "payspaceeval_app_db_user",
+    "POSTGRES_PASSWORD" : "v'9S]b@'Q-yHZp9d",
+    "POSTGRES_PORT" : 5432
+  },
+  "BlockCypher" : {
+    "CHAIN" : "test3",
+    "COIN"  : "btc",
+    "BlockCypher_BASE_ADDRESS" : "https://api.blockcypher.com/v1/",
+    "BlockCypher_Wallet_Address": "addrs",
+    "BlockCypher_Transaction_Address": "txs"
+  }
+}
