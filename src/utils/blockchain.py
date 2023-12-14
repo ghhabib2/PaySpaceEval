@@ -1,4 +1,6 @@
 from app import settings
+from .network import send_get_request, send_post_request
+from .convertors import AddressConvertor
 
 
 class BlockChain(object):
@@ -31,7 +33,24 @@ class BlockChain(object):
         :rtype: (str,str,str)
         """
 
-        raise NotImplemented("This method has not been yet.")
+        address_to_user = f"{self.__address_end_point}?bech32=true"
+
+        # Send the request to generate
+        data = send_post_request(address_to_user)
+
+        print(data)
+
+        if data is not None:
+            ## There is some data to look at
+            address = AddressConvertor().from_json(value=data)
+
+            print("I am here!!")
+
+            if address is not None:
+                print(address.address)
+            else:
+                print("No class available")
+
 
     def check_wallet_status(self):
         raise NotImplemented("This method has not been yet.")

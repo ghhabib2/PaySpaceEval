@@ -40,5 +40,14 @@ class Wallet(serializers.ModelSerializer):
     tx_url = serializers.CharField(help_text="Transaction Url")
     txrefs = Transaction(many=True, read_only=True)
 
+class Address(serializers.ModelSerializer):
+    class Meta:
+        # model =  # TODO: Will work on it later
+        fields = '__all__'
+
+    private = serializers.CharField(help_text="Private Key")
+    public = serializers.CharField(help_text="Public Key")
+    address = serializers.CharField(help_text="Address")
+    wif = serializers.CharField(help_text="Wallet Import Format")
 
 

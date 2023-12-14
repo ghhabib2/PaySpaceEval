@@ -30,8 +30,51 @@ def send_secured_request(url, payload, content_type, sys_key):
     # Send the request
     response = requests.request(method='POST', headers=headers, url= url, data=payload)
 
+
     return convert_to_dict(response.content), response.status_code
 
+def send_post_request(url, param: dict = None, data : dict = None , headers: dict = None, cookies : dict = None):
+    """
+
+    :param url:
+    :param param:
+    :param data:
+    :param headers:
+    :param cookies:
+    :return:
+    """
+
+    print(url)
+
+    response = requests.post(url)
+
+    print(response)
+
+    if response.status_code == 200 or response.status_code == 201:
+        return response.content
+    else:
+        return None
+
+def send_get_request(url, param: dict = None, data : dict = None , headers: dict = None, cookies : dict = None):
+    """
+    Send a Get request
+
+    :param url:
+    :param param:
+    :param data:
+    :param headers:
+    :param cookies:
+    :return:
+    """
+
+    response = requests.get(url)
+
+    print(response)
+
+    if response.status_code == 200:
+        return response.content
+    else:
+        return None
 
 def convert_to_dict(data):
     """
