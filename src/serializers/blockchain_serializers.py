@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 
-class TransAction(serializers.ModelSerializer):
+class Transaction(serializers.ModelSerializer):
     """
     Transaction serializer class
     """
@@ -38,7 +38,7 @@ class Wallet(serializers.ModelSerializer):
     unconfirmed_n_tx = serializers.IntegerField(help_text="Number of unconfirmed transactions")
     final_n_tx = serializers.IntegerField(help_text="Final transaction")
     tx_url = serializers.CharField(help_text="Transaction Url")
-    txrefs = TransAction(many=True, read_only=True)
+    txrefs = Transaction(many=True, read_only=True)
 
 
 
