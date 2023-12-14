@@ -34,3 +34,4 @@ class BlockChain(object):
         raise NotImplemented("This method has not been yet.")
 
     def check_wallet_status(self):
+        raise NotImplemented("This method has not been yet.")
