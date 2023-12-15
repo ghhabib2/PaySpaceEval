@@ -48,8 +48,6 @@ def send_post_request(url, param: dict = None, data : dict = None , headers: dic
 
     response = requests.post(url)
 
-    print(response)
-
     if response.status_code == 200 or response.status_code == 201:
         return response.content
     else:

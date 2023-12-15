@@ -38,13 +38,10 @@ class BlockChain(object):
         # Send the request to generate
         data = send_post_request(address_to_user)
 
-        print(data)
-
         if data is not None:
             ## There is some data to look at
-            address = AddressConvertor().from_json(value=data)
 
-            print("I am here!!")
+            address = AddressConvertor().from_json(value=data)
 
             if address is not None:
                 print(address.address)

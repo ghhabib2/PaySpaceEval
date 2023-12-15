@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from serializers import blockchain_serializers
 from serializers.blockchain_serializers import Wallet, Transaction, Address
-
+import json
 
 class Convertor(ABC):
     """
@@ -94,8 +94,14 @@ class AddressConvertor(Convertor):
         return Transaction(self.__target_object).data
 
     def from_json(self, value:str):
-        self.__target_object = Address(data=value)
+
+        self.__target_object = Address(data=json.loads(value.decode('utf-8')))
+        temp_address = Address()
+
+        # if self.__target_object.is_valid():
         if self.__target_object.is_valid():
-            return self.__target_object
+            for key, value in self.__target_object.validated_data.items():
+                setattr(temp_address, key, value)
+            return temp_address
         else:
             return None
