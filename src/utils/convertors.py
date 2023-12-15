@@ -45,9 +45,14 @@ class WalletConvertor(Convertor):
         return Wallet(self.__target_object).data;
 
     def from_json(self, value:str):
-        self.__target_object = Wallet(data=value)
+        self.__target_object = Wallet(data=json.loads(value.decode('utf-8')))
+        temp_wallet = Wallet()
+
+        # if self.__target_object.is_valid():
         if self.__target_object.is_valid():
-            return self.__target_object
+            for key, value in self.__target_object.validated_data.items():
+                setattr(temp_wallet, key, value)
+            return temp_wallet
         else:
             return None
 

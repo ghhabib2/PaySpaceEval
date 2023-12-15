@@ -1,14 +1,10 @@
 from rest_framework import serializers
 
 
-class Transaction(serializers.ModelSerializer):
+class Transaction(serializers.Serializer):
     """
     Transaction serializer class
     """
-    class Meta:
-        # model = TransAction # TODO: Will work on it later
-        fields = '__all__'
-
     tx_hash = serializers.CharField(help_text="Transaction hash")
     block_height = serializers.IntegerField(help_text="Block Height")
     tx_input_n = serializers.IntegerField(help_text="Transaction input number")
@@ -20,14 +16,10 @@ class Transaction(serializers.ModelSerializer):
     confirmed = serializers.DateTimeField("Confirmation Date and Time")
     double_spend = serializers.BooleanField(help_text="Double Spend flag")
 
-class Wallet(serializers.ModelSerializer):
+class Wallet(serializers.Serializer):
     """
     Wallet serializer class
     """
-    class Meta:
-        # model = Wallet # TODO: Will work on it later
-        fields = '__all__'
-
     address = serializers.CharField(help_text="Wallet Address")
     total_received = serializers.IntegerField(help_text="Total amount received in the Wallet")
     total_sent = serializers.IntegerField(help_text="Total sent by the wallet")

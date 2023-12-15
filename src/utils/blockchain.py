@@ -1,6 +1,7 @@
 from app import settings
 from .network import send_get_request, send_post_request
-from .convertors import AddressConvertor
+from .convertors import AddressConvertor, WalletConvertor
+from  serializers.blockchain_serializers import Address, Wallet
 
 
 class BlockChain(object):
@@ -30,7 +31,7 @@ class BlockChain(object):
             - The secret key.
 
         :return: Return this tuple (Address,Public Key,Secret Key)
-        :rtype: (str,str,str)
+        :rtype: Address
         """
 
         address_to_user = f"{self.__address_end_point}?bech32=true"
@@ -40,14 +41,26 @@ class BlockChain(object):
 
         if data is not None:
             ## There is some data to look at
-
-            address = AddressConvertor().from_json(value=data)
-
-            if address is not None:
-                print(address.address)
-            else:
-                print("No class available")
+            return AddressConvertor().from_json(value=data)
+        else:
+            return  None
 
 
-    def check_wallet_status(self):
-        raise NotImplemented("This method has not been yet.")
+    def check_wallet_status(self, wallet_address):
+        """
+        Retrieve all the wallet information and return it as a Wallet object
+
+        :param str wallet_address : The address of the wallet we try to test
+
+        :return: Return the wallet if it is existed and None if it is noe
+        :rtype: Wallet
+        """
+
+        address_to_use = f"{self.__address_end_point}/{wallet_address}"
+
+        data = send_get_request(address_to_use)
+
+        if data is not None:
+            return WalletConvertor().from_json(value=data)
+        else:
+            return None

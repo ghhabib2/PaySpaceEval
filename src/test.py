@@ -8,4 +8,7 @@ application = get_wsgi_application()
 
 blockchain_manager = blockchain.BlockChain()
 
-blockchain_manager.generate_wallet()
+temp_wallet = blockchain_manager.check_wallet_status('tb1qvavgt9rwuc0jtylnmqpwrlpgdz8075n8503x7p')
+
+if temp_wallet is not None:
+    print(temp_wallet.txrefs.length)
