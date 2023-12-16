@@ -110,3 +110,10 @@ class AddressConvertor(Convertor):
             return temp_address
         else:
             return None
+
+def __create_object_from_serializer_data(serializer_class, validated_data):
+    obj = serializer_class(data=validated_data)
+    if obj.is_valid():
+        return obj.save()  # Save the object instance if valid
+    else:
+        raise ValueError("Invalid data for serializer")

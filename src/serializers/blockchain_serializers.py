@@ -16,6 +16,7 @@ class Transaction(serializers.Serializer):
     confirmed = serializers.DateTimeField("Confirmation Date and Time")
     double_spend = serializers.BooleanField(help_text="Double Spend flag")
 
+
 class Wallet(serializers.Serializer):
     """
     Wallet serializer class
@@ -30,7 +31,6 @@ class Wallet(serializers.Serializer):
     unconfirmed_n_tx = serializers.IntegerField(help_text="Number of unconfirmed transactions")
     final_n_tx = serializers.IntegerField(help_text="Final transaction")
     tx_url = serializers.CharField(help_text="Transaction Url")
-    txrefs = Transaction(many=True, read_only=True)
 
 class Address(serializers.Serializer):
     private = serializers.CharField(help_text="Private Key")
