@@ -35,3 +35,5 @@ redis==4.5.5
 django-treebeard==4.7
 log4py
 psycopg2
+blockcypher
+aiohttp

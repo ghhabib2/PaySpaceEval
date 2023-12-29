@@ -39,5 +39,11 @@ class Address(serializers.Serializer):
     wif = serializers.CharField(help_text="Wallet Import Format")
 
 
+class UnsignedTransaction(serializers.Serializer):
+    input_address = serializers.CharField(help_text="Input Address")
+    output_address = serializers.CharField(help_text="Output Address")
+    value = serializers.IntegerField(help_text="Value")
+
+
 
 
