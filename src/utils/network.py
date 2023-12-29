@@ -1,6 +1,8 @@
 import json
 from enum import Enum
 import requests
+import aiohttp
+import asyncio
 
 class ContentType(Enum):
     """
@@ -8,30 +10,47 @@ class ContentType(Enum):
     """
     Json = 100
 
-def send_secured_request(url, payload, content_type, sys_key):
+async def send_secured_async_request(url, payload):
+    """
+    Sending an Async request to be processed
+    :param url: URL
+    :param payload: Payload
+    :return: returned results
+    """
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, json=payload) as response:
+            return await response.json()
+
+def send_secured_request(url, payload, headers= None, content_type= None, sys_key = None):
     """
     Send a secured query based on the share key and return the result from the endpoint.
 
     :param str url : URL of the endpoint to send the request
     :param str payload: The content type json string to be sent with the request.
-    :param ContentType content_type: Content Type code
-    "param str sys_key: System Key to connect a specific end-point
+    :param str ContentType content_type: Content Type code
+    :param str sys_key: System Key to connect a specific end-point
+    :param dict headers: Headers for the data
 
     :return: (String of the content set by the system, Status Cod)
     :rtype: (dict, int)
     """
-    headers = None
-    if content_type == ContentType.Json:
-        headers = {
-            'syskey': sys_key,
-            'Content-Type': 'application/json'
-        }
 
+    if content_type == ContentType.Json:
+        if headers is None and sys_key is not None:
+            headers = {
+                'syskey': sys_key, # TODO: Might need to change the way we are sending the system key
+                'Content-Type': 'application/json'
+            }
+        elif headers is None:
+            headers = {
+                'Content-Type': 'application/json'
+            }
+        else:
+            headers['Content-Type'] = 'application/json'
     # Send the request
     response = requests.request(method='POST', headers=headers, url= url, data=payload)
 
-
-    return convert_to_dict(response.content), response.status_code
+    return json.loads(response.content), response.status_code
 
 def send_post_request(url, param: dict = None, data : dict = None , headers: dict = None, cookies : dict = None):
     """
