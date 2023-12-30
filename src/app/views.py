@@ -49,6 +49,15 @@ class AppPages:
         """
         return render(request, 'sign-up.html', {'name': 'Habib', 'title': "Sign-Up"})
 
+    @classmethod
+    def addresses(cls, request):
+        """
+        Render the home pae
+        :param request:
+        :return:
+        """
+        return render(request, 'addresses.html', {'name': 'Habib', 'title': "Addresses"})
+
 
 class UserManagement(viewsets.ViewSet):
 
@@ -390,9 +399,9 @@ class AddressManagement(viewsets.ViewSet):
                 response_data = [
                     {
                         "address": address.address,
-                        "private": address.private,
-                        "public": address.public,
-                        "wif": address.wif
+                        "private": address.private[:4] + '*' * (len(address.private) - 30) ,
+                        "public": address.public[:4] + '*' * (len(address.public) - 30),
+                        "wif": address.wif[:4] + '*' * (len(address.wif) - 30)
                     }
                     for address in address_list]
 

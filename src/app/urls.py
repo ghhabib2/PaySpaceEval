@@ -55,6 +55,7 @@ urlpatterns = [
     path('', views.AppPages.login, name='login'),
     path('sign-up', views.AppPages.sign_up, name='sign-up'),
     path('home', views.AppPages.home, name='home'),
+    path('addresses', views.AppPages.addresses, name='addresses'),
     path('api/v1/users/', include(user_endpoints.urls)),
     path('api/v1/adr/', include(address_endpoints.urls)),
     path('docs/redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc')

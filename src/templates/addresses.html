@@ -10,8 +10,18 @@
 
 {%  block page_content %}
     <div class="card">
+        <form id="operationalForm" style="display: none">
+            {% csrf_token %}
+        </form>
         <div class="card-body">
             <h4>Addresses</h4>
+            <p>Here you can see the information of your available addresses that we are tracking them. You can also
+                generate a new address using the Add new address button.
+            </p>
+            <div class="m-t-25 text-right">
+                <button id="generate-new-address-button" class="btn btn-primary m-r-5" data-toggle="modal"
+                        data-target="#generate-new-address-modal-confirm">Add new Address</button>
+            </div>
             <div class="m-t-25">
                 <table id="addresses-data-table" class="table">
                     <thead>
@@ -28,10 +38,13 @@
                             <th>
                                 WIF
                             </th>
+                            <th>
+                                Details
+                            </th>
                         </tr>
                     </thead>
                     <tbody id="address-table-body">
-
+                        <tr></tr>
                     </tbody>
                     <tfoot>
                         <tr>
@@ -47,9 +60,97 @@
                             <th>
                                 WIF
                             </th>
+                            <th>
+                                Details
+                            </th>
                         </tr>
                     </tfoot>
                 </table>
+            </div>
+        </div>
+    </div>
+    <div  class="modal" >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Modal title</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p>Modal body text goes here.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary">Save changes</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="generate-new-address-modal-confirm" tabindex="-1" role="dialog" class="modal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Generate a New Address</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <i class="anticon anticon-close"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to generate a new Address.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger m-r-10" data-dismiss="modal">No</button>
+                    <button type="button" id="btn-generate-address-confirm" class="btn btn-primary">Generate the Address</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="generate-new-address-modal-Details" tabindex="-1" role="dialog" class="modal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Address Detials</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <i class="anticon anticon-close"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        Please save this information if you need to use them somewhere else. You will not be able to
+                        see the private,public, and wif information after closing this window!.
+                    </div>
+                    <div>
+                        <div class="form-group row">
+                            <label for="addressVal" class="col-sm-3 col-form-label">Address:</label>
+                            <div class="col-sm-9">
+                                <input type="email" class="form-control" id="addressVal" readonly>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="privateVal" class="col-sm-3 col-form-label">Private Key:</label>
+                            <div class="col-sm-9">
+                                <input type="email" class="form-control" id="privateVal" readonly>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="publicVal" class="col-sm-3 col-form-label">Public Key:</label>
+                            <div class="col-sm-9">
+                                <input type="email" class="form-control" id="publicVal" readonly>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="wifVal" class="col-sm-3 col-form-label">WIF:</label>
+                            <div class="col-sm-9">
+                                <input type="email" class="form-control" id="wifVal" readonly>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer text-center">
+                    <button type="button" class="btn btn-primary m-r-10" id="btn-address-modal-close" >Close</button>
+                </div>
             </div>
         </div>
     </div>
@@ -59,6 +160,193 @@
     <script src="files/assets/vendors/datatables/jquery.dataTables.min.js"></script>
     <script src="files/assets/vendors/datatables/dataTables.bootstrap.min.js"></script>
 
-    <!-- TODO Adding the scripts regarding reading and filling the information -->
+    <script>
+        $(document).ready(()=>{
+            var user_data = JSON.parse(checkCookieData('user_data'));
+            if (user_data !== null)
+            {
+                fill_table(user_data.user_id);
+            }
+
+        });
+
+        /**
+         * Adding the address rows to the data table
+         * @param item Items to be used in the table
+         */
+        var addAddressRowNew = function (item) {
+
+            var colAddress = '<td class="font-size-10" >' + item.address + '</td>';
+            var colPrivate = '<td class="font-size-10">' + item.private + '</td>';
+            var colPublic = '<td class="font-size-10">' + item.public + '</td>';
+            var colWif = '<td class="font-size-10">' + item.wif + '</td>';
+            var coldDetails = '<td><a href="#"><i class="anticon anticon-eye font-size-20"></i></a></td>'
+
+            var rowOrder = "<tr>"
+                    + colAddress + colPrivate + colPublic + colWif  + coldDetails + "</tr>";
+
+            $("#address-table-body tr:last").after(rowOrder);
+        }
+
+        /**
+         * Clear the Table make it ready for the records
+         */
+        var emptyOrderTable = function () {
+            $("#address-table-body").find("tr:gt(0)").remove();
+        }
+
+        /**
+         * Fill the addresses for the user into the table
+         * @param user_id User ID
+         */
+        var fill_table = (user_id) => {
+
+            const tokenizers = $('[name=csrfmiddlewaretoken]').attr('value'); // Use your method to get the CSRF token
+
+            const payload = {
+                "user_id" : user_id
+            };
+
+            $.ajax({
+                    url: 'api/v1/adr/rest/read_address_list/',
+                    type: 'POST',
+                    data: JSON.stringify(payload),
+                    dataType: 'json',
+                    contentType: 'application/json; charset=utf-8',
+                    headers: { "X-CSRFToken": tokenizers },
+                    error: function (xhr) {
+                        console.log('Error: ' + xhr.statusText);
+                        if(xhr.status === 500)
+                        {
+                            bootoast.toast({
+                               message: 'An internal error happens. We are not able to process your request now!!',
+                               type: 'danger',
+                               position: 'right-top',
+                               timeout: 10,
+                               animationDuration: 300,
+                               dismissible: true
+                           });
+                        }
+                        if(xhr.status === 400)
+                        {
+                            bootoast.toast({
+                               message: 'Invalid data.!!',
+                               type: 'danger',
+                               position: 'right-top',
+                               timeout: 10,
+                               animationDuration: 300,
+                               dismissible: true
+                           });
+                        }
+                    },
+                    success: function (result) {
+                        // Add the user data to the cookies
+                        // Clear the table
+                        emptyOrderTable();
+                        // Add the rows to the table
+                        result.forEach(function (item) {
+                            addAddressRowNew(item);
+                        });
+
+                        // Load the data table
+                        //$('#addresses-data-table').DataTable();
+
+                    },
+                    async: false,
+                    cache: false,
+                    timeout: 10000,
+                    processData: false
+                });
+
+
+
+        }
+
+        $("#btn-generate-address-confirm").on("click", () =>{
+            // Hide the previous modal.
+            $("#generate-new-address-modal-confirm").modal('hide');
+            // Register the information
+            const tokenizers = $('[name=csrfmiddlewaretoken]').attr('value'); // Use your method to get the CSRF token
+
+            var user_data = JSON.parse(checkCookieData('user_data'));
+
+            const payload = {
+                "user_id" : user_data.user_id
+            };
+
+            $.ajax({
+                    url: 'api/v1/adr/rest/generate_address/',
+                    type: 'POST',
+                    data: JSON.stringify(payload),
+                    dataType: 'json',
+                    contentType: 'application/json; charset=utf-8',
+                    headers: { "X-CSRFToken": tokenizers },
+                    error: function (xhr) {
+                        console.log('Error: ' + xhr.statusText);
+                        if(xhr.status === 500)
+                        {
+                            bootoast.toast({
+                               message: 'An internal error happens. We are not able to process your request now!!',
+                               type: 'danger',
+                               position: 'right-top',
+                               timeout: 10,
+                               animationDuration: 300,
+                               dismissible: true
+                           });
+                        }
+                        if(xhr.status === 400)
+                        {
+                            bootoast.toast({
+                               message: 'Invalid request sent to the server!!',
+                               type: 'danger',
+                               position: 'right-top',
+                               timeout: 10,
+                               animationDuration: 300,
+                               dismissible: true
+                           });
+                        }
+                    },
+                    success: function (result) {
+                        // Add the user data to the cookies
+                        // Fill the data table
+                        fill_table(user_data.user_id);
+                        // Fill the detail modal information
+                        $("#addressVal").val(result.address)
+                        $("#privateVal").val(result.private)
+                        $("#publicVal").val(result.public)
+                        $("#wifVal").val(result.wif)
+
+                        // Open the modal
+                        // Show the final result modal.
+                        $("#generate-new-address-modal-Details").modal({
+                            "focus" : false,
+                            "keyboard" : false,
+                            "show" : true
+                        });
+                        // Load the data table
+                        //$('#addresses-data-table').DataTable();
+
+                    },
+                    async: false,
+                    cache: false,
+                    timeout: 10000,
+                    processData: false
+                });
+        });
+
+        $("#btn-address-modal-close").on("click", () => {
+           $("#generate-new-address-modal-Details").modal('hide');
+           // Display a notification for the user
+            bootoast.toast({
+                   message: 'The address has been generated and added to the list of the addresses!!',
+                   type: 'success',
+                   position: 'right-top',
+                   timeout: 10,
+                   animationDuration: 300,
+                   dismissible: true
+            });
+        });
+    </script>
+
 
 {% endblock %}
