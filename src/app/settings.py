@@ -56,6 +56,10 @@ BlockCypher_BASE_ADDRESS = data['BlockCypher']['BlockCypher_BASE_ADDRESS']
 BlockCypher_Wallet_Address = data['BlockCypher']['BlockCypher_Wallet_Address']
 BlockCypher_Transaction_Address = data['BlockCypher']['BlockCypher_Transaction_Address']
 
+# User Management
+# ----------------
+DEFAULT_PASSWORD_SALT = data['UserManagement']['known_salt']
+EXPIRES_Days = data['UserManagement']['expires_days']
 
 
 # Application definition
@@ -67,17 +71,26 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'drf_yasg'
 ]
 
 MIDDLEWARE = [
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'basic': {
+            'type': 'basic',
+        }
+    },
+}
 
 ROOT_URLCONF = 'app.urls'
 

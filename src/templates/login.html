@@ -1,0 +1,214 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Enlink - Admin Dashboard Template</title>
+
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="files/assets/images/logo/favicon.png">
+
+    <!-- page css -->
+
+    <!-- Core css -->
+    <link href="files/assets/css/app.min.css" rel="stylesheet">
+    <link href="files/assets/css/bootoast.min.css" rel="stylesheet" >
+</head>
+
+<body>
+    <div class="app">
+        <div class="container-fluid p-h-0 p-v-20 bg full-height d-flex" style="background-image: url('files/assets/images/others/login-3.png')">
+            <div class="d-flex flex-column justify-content-between w-100">
+                <div class="container d-flex h-100">
+                    <div class="row align-items-center w-100">
+                        <div class="col-md-7 col-lg-5 m-h-auto">
+                            <div class="card shadow-lg">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center justify-content-between m-b-30">
+                                        <img class="img-fluid" alt="" src="files/assets/images/logo/logo.png">
+                                        <h2 class="m-b-0">Sign In</h2>
+                                    </div>
+                                    <form id="loginForm">
+                                        {% csrf_token %}
+                                        <div class="form-group">
+                                            <label class="font-weight-semibold" for="userName">Username:</label>
+                                            <div class="input-affix">
+                                                <i class="prefix-icon anticon anticon-user"></i>
+                                                <input type="text" class="form-control" id="userName" placeholder="Username">
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="font-weight-semibold" for="password">Password:</label>
+                                            <a class="float-right font-size-13 text-muted" href="">Forget Password?</a>
+                                            <div class="input-affix m-b-10">
+                                                <i class="prefix-icon anticon anticon-lock"></i>
+                                                <input type="password" class="form-control" id="password" placeholder="Password">
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <span class="font-size-13 text-muted">
+                                                    Don't have an account? 
+                                                    <a class="small" href="sign-up"> Signup</a>
+                                                </span>
+                                                <button class="btn btn-primary">Sign In</button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-none d-md-flex p-h-40 justify-content-between">
+                    <span class="">© 2023 Pay Space</span>
+                    <ul class="list-inline">
+                        <li class="list-inline-item">
+                            <a class="text-dark text-link" href="">Legal</a>
+                        </li>
+                        <li class="list-inline-item">
+                            <a class="text-dark text-link" href="">Privacy</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <!-- Core Vendors JS -->
+    <script src="files/assets/js/vendors.min.js"></script>
+
+    <!-- page js -->
+
+    <!-- Core JS -->
+    <script src="files/assets/js/app.min.js"></script>
+    <script src="files/assets/js/bootoast.min.js"></script>
+    <script>
+        $(document).ready(()=>{
+
+            // Check if the user information available in the cookies
+
+           if (checkCookieData('user_data') !== null)
+           {
+               // Redirect to the home
+               window.location.href = 'home';
+           }
+
+           var queryString = window.location.search;
+           // Check if the user came here after registration.
+           if (queryString.includes('signup=true')){
+               bootoast.toast({
+                   message: 'Your registration has been complete!!',
+                   type: 'success',
+                   position: 'right-top',
+                   timeout: 10,
+                   animationDuration: 300,
+                   dismissible: true
+               });
+           }
+
+           $("#loginForm").submit((event) => {
+                // Stop the form submission
+                event.preventDefault();
+                const tokenizers = $('[name=csrfmiddlewaretoken]').attr('value'); // Use your method to get the CSRF token
+
+                const payload = {
+                    "username": $("#userName").val(),
+                    "password": $("#password").val()
+                };
+
+                $.ajax({
+                    url: 'api/v1/users/rest/login_user/',
+                    type: 'POST',
+                    data: JSON.stringify(payload),
+                    dataType: 'json',
+                    contentType: 'application/json; charset=utf-8',
+                    headers: { "X-CSRFToken": tokenizers },
+                    error: function (xhr) {
+                        console.log('Error: ' + xhr.statusText);
+                        if(xhr.status === 401)
+                        {
+                            bootoast.toast({
+                               message: 'Your data is not valid!!',
+                               type: 'danger',
+                               position: 'right-top',
+                               timeout: 10,
+                               animationDuration: 300,
+                               dismissible: true
+                           });
+                        }
+                        if(xhr.status === 400)
+                        {
+                            bootoast.toast({
+                               message: 'Invalid data. Please check your username and password!!',
+                               type: 'danger',
+                               position: 'right-top',
+                               timeout: 10,
+                               animationDuration: 300,
+                               dismissible: true
+                           });
+                        }
+                    },
+                    success: function (result) {
+                        // Add the user data to the cookies
+                        const data = result.user_data;
+                        generate_user_cookie(data);
+                        window.location.href = 'home';
+                    },
+                    async: false,
+                    cache: false,
+                    timeout: 10000,
+                    processData: false
+                });
+            });
+        });
+        /**
+         * Adding the user data to the Cookie
+         * @param user_data User data to be stored in the cookie
+         */
+        var generate_user_cookie = (user_data) => {
+            setCookie('user_data', user_data, {{expires}} );
+        };
+
+        /**
+         * Check if the cookie name available in the cookie data
+         * @param cookieName
+         */
+        var checkCookieData = (cookieName) => {
+            var decodedCookie = decodeURIComponent(document.cookie);
+            var cookieArray = decodedCookie.split(';');
+            var foundData = null;
+
+            // Iterate through each cookie
+            $.each(cookieArray, function(index, cookie) {
+                var cookiePair = cookie.trim().split('=');
+
+                // Check if the cookie name matches the provided name
+                if (cookiePair[0] === cookieName) {
+                    foundData = cookiePair[1];
+                    return false; // Exit the loop if the data is found
+                }
+            });
+
+            return foundData; // Return the found data or null if not found
+        };
+
+        /**
+         * Setting the cookie value
+         * @param cookieName Parameter name
+         * @param cookieValue Parameter value
+         * @param expirationDays expiration day
+         */
+        var setCookie = (cookieName, cookieValue, expirationDays) => {
+            var date = new Date();
+            date.setTime(date.getTime() + (expirationDays * 24 * 60 * 60 * 1000));
+            var expires = "expires=" + date.toUTCString();
+            document.cookie = cookieName + "=" + encodeURIComponent(JSON.stringify(cookieValue)) + ";" + expires + ";path=/";
+        };
+    </script>
+</body>
+
+</html>

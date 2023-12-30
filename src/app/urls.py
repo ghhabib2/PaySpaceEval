@@ -16,13 +16,42 @@ Including another URLconf
 """
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from . import views
 from . import settings
+from rest_framework.routers import DefaultRouter
+from drf_yasg.views import get_schema_view
+from drf_yasg import openapi
+from rest_framework import permissions
+from django.template.loader import render_to_string
+from .routes import routes
+
+
+user_endpoints = DefaultRouter()
+
+for route in routes:
+    user_endpoints.register(route['regex'], route['viewset'], basename=route['basename'])
+
+schema_view = get_schema_view(
+    openapi.Info(
+        title="Pay Space Endpoints",
+        default_version='v1',
+        description=render_to_string('swagger/introduction.md'),
+        terms_of_service="https://ghhabib.me/",
+        contact=openapi.Contact(email="ghhabib2@gmail.com"),
+        license=openapi.License(name="MIT License"),
+    ),
+    public=True,
+    permission_classes=[permissions.AllowAny,],
+)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', views.home, name='home')
+    path('', views.AppPages.login, name='login'),
+    path('sign-up', views.AppPages.sign_up, name='sign-up'),
+    path('home', views.AppPages.home, name='home'),
+    path('api/v1/users/', include(user_endpoints.urls)),
+    path('docs/redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc')
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

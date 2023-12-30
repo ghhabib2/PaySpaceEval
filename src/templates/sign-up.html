@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Enlink - Admin Dashboard Template</title>
+
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="files/assets/images/logo/favicon.png">
+
+    <!-- page css -->
+
+    <!-- Core css -->
+    <link href="files/assets/css/app.min.css" rel="stylesheet">
+    <link href="files/assets/css/bootoast.min.css" rel="stylesheet" >
+</head>
+
+<body>
+    <div class="app">
+        <div class="container-fluid p-h-0 p-v-20 bg full-height d-flex" style="background-image: url('files/assets/images/others/login-3.png')">
+            <div class="d-flex flex-column justify-content-between w-100">
+                <div class="container d-flex h-100">
+                    <div class="row align-items-center w-100">
+                        <div class="col-md-7 col-lg-5 m-h-auto">
+                            <div class="card shadow-lg">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center justify-content-between m-b-30">
+                                        <img class="img-fluid" alt="" src="files/assets/images/logo/logo.png">
+                                        <h2 class="m-b-0">Sign In</h2>
+                                    </div>
+                                    <form id="signUpForm">
+                                        {% csrf_token %}
+                                        <div class="form-group">
+                                            <label class="font-weight-semibold" for="firstName">First Name:</label>
+                                            <div class="input-affix">
+                                                <input type="text" class="form-control" id="firstName" placeholder="First Name">
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="font-weight-semibold" for="lastName">Last Name:</label>
+                                            <div class="input-affix">
+                                                <input type="text" class="form-control" id="lastName" placeholder="Last Name">
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="font-weight-semibold" for="userName">Username:</label>
+                                            <input type="text" class="form-control" id="userName" placeholder="Username">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="font-weight-semibold" for="email">Email:</label>
+                                            <input type="email" class="form-control" id="email" placeholder="Email">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="font-weight-semibold" for="password">Password:</label>
+                                            <input type="password" class="form-control" id="password" placeholder="Password">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="font-weight-semibold" for="confirmPassword">Confirm Password:</label>
+                                            <input type="password" class="form-control" id="confirmPassword" placeholder="Confirm Password">
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="d-flex align-items-center justify-content-between p-t-15">
+                                                <div class="checkbox">
+                                                    <input id="checkbox" type="checkbox">
+                                                    <label for="checkbox"><span>I have read the <a href="">agreement</a></span></label>
+                                                </div>
+                                                <button class="btn btn-primary">Sign In</button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-none d-md-flex p-h-40 justify-content-between">
+                    <span class="">© 2023 Pay Space</span>
+                    <ul class="list-inline">
+                        <li class="list-inline-item">
+                            <a class="text-dark text-link" href="">Legal</a>
+                        </li>
+                        <li class="list-inline-item">
+                            <a class="text-dark text-link" href="">Privacy</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <!-- Core Vendors JS -->
+    <script src="files/assets/js/vendors.min.js"></script>
+
+    <!-- page js -->
+
+    <!-- Core JS -->
+    <script src="files/assets/js/app.min.js"></script>
+    <script src="files/assets/js/bootoast.min.js"></script>
+
+    <script lang="JavaScript">
+        // Add the form submission
+        $(document).ready(()=> {
+            $("#signUpForm").submit((event) => {
+                // Stop the form submission
+                event.preventDefault();
+                const tokenizers = $('[name=csrfmiddlewaretoken]').attr('value'); // Use your method to get the CSRF token
+
+                const payload = {
+                    "username": $("#userName").val(),
+                    "password": $("#password").val(),
+                    "email": $("#email").val(),
+                    "first_name": $("#firstName").val(),
+                    "last_name": $("#lastName").val()
+                };
+
+                $.ajax({
+                    url: 'api/v1/users/rest/add_none_admin_user/',
+                    type: 'POST',
+                    data: JSON.stringify(payload),
+                    dataType: 'json',
+                    contentType: 'application/json; charset=utf-8',
+                    headers: { "X-CSRFToken": tokenizers },
+                    error: function (xhr) {
+                        console.log('Error: ' + xhr.statusText);
+                        if(xhr.status === 400)
+                        {
+                            bootoast.toast({
+                               message: 'Your data is not valid!!',
+                               type: 'danger',
+                               position: 'right-top',
+                               timeout: 10,
+                               animationDuration: 300,
+                               dismissible: true
+                           });
+                        }
+                        if(xhr.status === 409)
+                        {
+                            bootoast.toast({
+                               message: 'There is another user with this information in the system!!',
+                               type: 'danger',
+                               position: 'right-top',
+                               timeout: 10,
+                               animationDuration: 300,
+                               dismissible: true
+                           });
+                        }
+                    },
+                    success: function (result) {
+                        // It suppose to change the css class of the div on the top of the link
+                        console.log(result);
+                        window.location.href = '?signup=true';
+                    },
+                    async: false,
+                    cache: false,
+                    timeout: 10000,
+                    processData: false
+                });
+            });
+        });
+    </script>
+
+</body>
+
+</html>
