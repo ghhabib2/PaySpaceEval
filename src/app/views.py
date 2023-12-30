@@ -13,11 +13,13 @@ from django.utils.decorators import method_decorator
 from serializers.user_endpoint_serialzers import AddUserSerializer, LoginUserSerializer
 from serializers.address_endpoint_serializers import AddressRequestSerializer
 from django.contrib.auth.hashers import make_password
-from.swagger import AddUserXcodeAutoSchema, LoginUserXcodeAutoSchema, GenerateAddressXcodeAutoSchema
+from.swagger import (AddUserXcodeAutoSchema, LoginUserXcodeAutoSchema, GenerateAddressXcodeAutoSchema,
+                     GenerateAddressListXcodeAutoSchema)
 from utils.blockchain import BlockChain
 from . import settings
 from . import models
-from django.db.models import Q
+from django.db.models import Q, QuerySet
+
 
 class AppPages:
     @classmethod
@@ -259,8 +261,8 @@ class AddressManagement(viewsets.ViewSet):
 
                     - **`HttpResponse`**: Returning the address information
                     """,
-            responses=GenerateAddressXcodeAutoSchema.responses(),
-            auto_schema=GenerateAddressXcodeAutoSchema,
+            responses=GenerateAddressListXcodeAutoSchema.responses(),
+            auto_schema=GenerateAddressListXcodeAutoSchema,
             tags=['Address Endpoints']
         )
     )
@@ -322,6 +324,81 @@ class AddressManagement(viewsets.ViewSet):
                     Raise an exception with related message
                     """
                     raise Exception("The address is not generated")
+            except Exception as ex:
+                """
+                Return internal process error
+                """
+                response_data = {
+                    "error": f"There is an internal process error. Error: {ex}",
+                    "message": ""
+                }
+                return Response(response_data, content_type="application/json",
+                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        else:
+            """
+            Rerun data validation error
+            """
+            response_data = {
+                "error": "The data is not validated. Not able to proceed.",
+                "message": ""
+            }
+            return Response(response_data, content_type="application/json", status=status.HTTP_400_BAD_REQUEST)
+
+    @method_decorator(
+        decorator=swagger_auto_schema(
+            operation_summary="Get the list of addresses for a user",
+            operation_description="""
+                        Generate the list of addresses for the user
+
+                        Parameters:
+                        -----------
+
+                        - **request** (`HttpRequest`): Here is the list of parameters:
+                            - `user_id` : User ID requesting the address
+
+                        Returns:
+                        --------
+
+                        - **`HttpResponse`**: Returning the address information
+                        """,
+            responses=GenerateAddressXcodeAutoSchema.responses(),
+            auto_schema=GenerateAddressXcodeAutoSchema,
+            tags=['Address Endpoints']
+        )
+    )
+    @action(methods=['post'],
+            detail=False,
+            url_path='read_address_list',
+            permission_classes=[AllowAny, ])
+    def read_address_list(self, request):
+        """
+        Retrieve all address lists for a user.
+
+        """
+
+        serializer = AddressRequestSerializer(data=request.data)
+        if serializer.is_valid():
+            try:
+
+                """
+                Retrieve the user information
+                """
+
+                user_id = request.data['user_id']
+                address_list : QuerySet[models.Address] = models.Address.objects.filter(Q(user_id=user_id))
+
+                response_data = [
+                    {
+                        "address": address.address,
+                        "private": address.private,
+                        "public": address.public,
+                        "wif": address.wif
+                    }
+                    for address in address_list]
+
+                return Response(response_data, content_type="application/json",
+                                status=status.HTTP_200_OK)
+
             except Exception as ex:
                 """
                 Return internal process error

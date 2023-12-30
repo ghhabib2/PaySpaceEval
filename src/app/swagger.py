@@ -38,4 +38,14 @@ class GenerateAddressXcodeAutoSchema(XcodeAutoSchema):
             500: "Internal Server Error",
             400: "Bad Request"
         }
+
+class GenerateAddressListXcodeAutoSchema(XcodeAutoSchema):
+    python_template = "swagger/users/add_none_admin_user/python_sample.html"
+    @classmethod
+    def responses(cls):
+        return {
+            200: serializers.ListSerializer(child=AddressResultSerializer()),
+            500: "Internal Server Error",
+            400: "Bad Request"
+        }
 # End Address Schemas
