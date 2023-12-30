@@ -12,5 +12,9 @@
     "BlockCypher_BASE_ADDRESS" : "https://api.blockcypher.com/v1/",
     "BlockCypher_Wallet_Address": "addrs",
     "BlockCypher_Transaction_Address": "txs"
+  },
+  "UserManagement" : {
+    "known_salt" : "ea7d8290e691ef503d180db62c0fa16d",
+    "expires_days" : 7
   }
 }
