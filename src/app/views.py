@@ -11,9 +11,12 @@ from rest_framework.permissions import AllowAny
 from django.contrib.auth.models import User
 from django.utils.decorators import method_decorator
 from serializers.user_endpoint_serialzers import AddUserSerializer, LoginUserSerializer
+from serializers.address_endpoint_serializers import AddressRequestSerializer
 from django.contrib.auth.hashers import make_password
-from.swagger import AddUserXcodeAutoSchema, LoginUserXcodeAutoSchema
+from.swagger import AddUserXcodeAutoSchema, LoginUserXcodeAutoSchema, GenerateAddressXcodeAutoSchema
+from utils.blockchain import BlockChain
 from . import settings
+from . import models
 from django.db.models import Q
 
 class AppPages:
@@ -229,6 +232,112 @@ class UserManagement(viewsets.ViewSet):
             """
             response_data = {
                 "error" : "The data is not validated. Please check the information you are sending to the endpoint.",
+                "message": ""
+            }
+            return Response(response_data, content_type="application/json", status=status.HTTP_400_BAD_REQUEST)
+
+
+class AddressManagement(viewsets.ViewSet):
+    """
+    Endpoints for address management
+    """
+
+    @method_decorator(
+        decorator=swagger_auto_schema(
+            operation_summary="Generate a address for the user",
+            operation_description="""
+                    generate a address for the user
+
+                    Parameters:
+                    -----------
+
+                    - **request** (`HttpRequest`): Here is the list of parameters:
+                        - `user_id` : User ID requesting the address
+
+                    Returns:
+                    --------
+
+                    - **`HttpResponse`**: Returning the address information
+                    """,
+            responses=GenerateAddressXcodeAutoSchema.responses(),
+            auto_schema=GenerateAddressXcodeAutoSchema,
+            tags=['Address Endpoints']
+        )
+    )
+    @action(methods=['post'],
+            detail=False,
+            url_path='generate_address',
+            permission_classes=[AllowAny, ])
+    def generate_address(self, request):
+        """
+        Generating an addrress for the user
+        :param request:
+        :return: The generated results
+        """
+
+        serializer = AddressRequestSerializer(data=request.data)
+        if serializer.is_valid():
+            try:
+                """
+                Create a processor object
+                """
+                block_chain_processor = BlockChain()
+                """
+                Request a new address to be generated
+                """
+                address = block_chain_processor.generate_address()
+                """
+                Check if the address is null
+                """
+                if address is not None:
+
+                    user_id = request.data['user_id']
+                    """
+                    Add the address to the database for the user
+                    """
+                    record_to_be_stored= models.Address()
+
+                    record_to_be_stored.address = address.address
+                    record_to_be_stored.private = address.private
+                    record_to_be_stored.public = address.public
+                    record_to_be_stored.wif = address.wif
+                    record_to_be_stored.user_id = User.objects.get(pk=user_id)
+                    record_to_be_stored.save()
+
+                    """
+                    return the result
+                    """
+                    response_data = {
+                        "address" : address.address,
+                        "private" : address.private,
+                        "public" : address.public,
+                        "wif" : address.wif
+                    }
+
+                    return Response(response_data, content_type="application/json",
+                                    status=status.HTTP_201_CREATED)
+
+                else:
+                    """
+                    Raise an exception with related message
+                    """
+                    raise Exception("The address is not generated")
+            except Exception as ex:
+                """
+                Return internal process error
+                """
+                response_data = {
+                    "error": f"There is an internal process error. Error: {ex}",
+                    "message": ""
+                }
+                return Response(response_data, content_type="application/json",
+                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        else:
+            """
+            Rerun data validation error
+            """
+            response_data = {
+                "error": "The data is not validated. Not able to proceed.",
                 "message": ""
             }
             return Response(response_data, content_type="application/json", status=status.HTTP_400_BAD_REQUEST)

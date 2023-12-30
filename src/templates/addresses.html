@@ -1,0 +1,64 @@
+{% extends 'master.html' %}
+
+{% block title %}
+    User's addresses
+{% endblock %}
+
+{% block custom_css %}
+    <link href="files/assets/vendors/datatables/dataTables.bootstrap.min.css" rel="stylesheet">
+{% endblock %}
+
+{%  block page_content %}
+    <div class="card">
+        <div class="card-body">
+            <h4>Addresses</h4>
+            <div class="m-t-25">
+                <table id="addresses-data-table" class="table">
+                    <thead>
+                        <tr>
+                            <th>
+                                Address
+                            </th>
+                            <th>
+                                Private Key
+                            </th>
+                            <th>
+                                Public Key
+                            </th>
+                            <th>
+                                WIF
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="address-table-body">
+
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th>
+                                Address
+                            </th>
+                            <th>
+                                Private Key
+                            </th>
+                            <th>
+                                Public Key
+                            </th>
+                            <th>
+                                WIF
+                            </th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block custom_js %}
+    <script src="files/assets/vendors/datatables/jquery.dataTables.min.js"></script>
+    <script src="files/assets/vendors/datatables/dataTables.bootstrap.min.js"></script>
+
+    <!-- TODO Adding the scripts regarding reading and filling the information -->
+
+{% endblock %}

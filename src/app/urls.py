@@ -24,13 +24,18 @@ from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework import permissions
 from django.template.loader import render_to_string
-from .routes import routes
+from .routes import user_routes, address_routes
 
 
 user_endpoints = DefaultRouter()
 
-for route in routes:
+for route in user_routes:
     user_endpoints.register(route['regex'], route['viewset'], basename=route['basename'])
+
+address_endpoints = DefaultRouter()
+
+for route in address_routes:
+    address_endpoints.register(route['regex'], route['viewset'], basename=route['basename'])
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -51,6 +56,7 @@ urlpatterns = [
     path('sign-up', views.AppPages.sign_up, name='sign-up'),
     path('home', views.AppPages.home, name='home'),
     path('api/v1/users/', include(user_endpoints.urls)),
+    path('api/v1/adr/', include(address_endpoints.urls)),
     path('docs/redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc')
 ]
 
