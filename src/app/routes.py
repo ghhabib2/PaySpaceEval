@@ -1,6 +1,10 @@
-from .views import UserManagement
+from .views import UserManagement, AddressManagement
 
 
-routes = [
+user_routes = [
     {'regex': r'rest', 'viewset': UserManagement, 'basename': 'Rest'}
+]
+
+address_routes = [
+    {'regex': r'rest', 'viewset': AddressManagement, 'basename': 'Rest'}
 ]

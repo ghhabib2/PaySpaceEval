@@ -26,7 +26,7 @@ class BlockChain(object):
         """
 
 
-    def generate_wallet(self):
+    def generate_address(self):
         """
         generate a new address and return the following information:
             - The Address.
@@ -49,7 +49,7 @@ class BlockChain(object):
             return  None
 
 
-    def check_wallet_status(self, wallet_address):
+    def check_address_status(self, wallet_address):
         """
         Retrieve all the wallet information and return it as a Wallet object
 

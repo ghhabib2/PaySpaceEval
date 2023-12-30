@@ -14,6 +14,8 @@ class Address(models.Model):
     public = models.CharField(help_text="Public Key", max_length=150)
     address = models.CharField(help_text="Address", max_length=150)
     wif = models.CharField(help_text="Wallet Import Format", max_length=150)
+
+
 class AddressInfo(models.Model):
     """
     POCO class for models which also be used for DBF table generation
@@ -22,7 +24,7 @@ class AddressInfo(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     address_id = models.OneToOneField(Address, on_delete=models.CASCADE,
                                    related_name='address_id',
-                                   help_text="Related Address")
+                                   help_text="Related Address", null=True, blank=True)
     total_received = models.IntegerField(help_text="Total amount received in the Wallet")
     total_sent = models.IntegerField(help_text="Total sent by the wallet")
     balance = models.IntegerField(help_text="Wallet Balance")
