@@ -30,7 +30,6 @@ class Wallet(serializers.Serializer):
     n_tx = serializers.IntegerField(help_text="Number of transactions")
     unconfirmed_n_tx = serializers.IntegerField(help_text="Number of unconfirmed transactions")
     final_n_tx = serializers.IntegerField(help_text="Final transaction")
-    tx_url = serializers.CharField(help_text="Transaction Url")
 
 class Address(serializers.Serializer):
     private = serializers.CharField(help_text="Private Key")
