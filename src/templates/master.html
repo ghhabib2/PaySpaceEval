@@ -10,17 +10,17 @@
     </title>
 
     <!-- Favicon -->
-    <link rel="shortcut icon" href="files/assets/images/logo/favicon.png">
+    <link rel="shortcut icon" href="../files/assets/images/logo/favicon.png">
 
     <!-- page css -->
-
-    <!-- Core css -->
-    <link href="files/assets/css/app.min.css" rel="stylesheet">
-
-    <!-- Custom CSS -->
-    <link href="files/assets/css/bootoast.min.css" rel="stylesheet" >
     {% block custom_css %}
     {% endblock %}
+    <!-- Core css -->
+    <link href="../files/assets/css/app.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link href="../files/assets/css/bootoast.min.css" rel="stylesheet" >
+
 </head>
 
 <body>
@@ -671,17 +671,18 @@
 
 
     <!-- Core Vendors JS -->
-    <script src="files/assets/js/vendors.min.js"></script>
+    <script src="../files/assets/js/vendors.min.js"></script>
 
     <!-- page js -->
-    <script src="files/assets/vendors/chartjs/Chart.min.js"></script>
+    <script src="../files/assets/vendors/chartjs/Chart.min.js"></script>
     {#    <script src="files/assets/js/pages/dashboard-default.js"></script>#}
-
+    {% block custom_js %}
+    {% endblock %}
     <!-- Core JS -->
-    <script src="files/assets/js/app.min.js"></script>
+    <script src="../files/assets/js/app.min.js"></script>
 
     <!-- Custom Js -->
-    <script src="files/assets/js/bootoast.min.js"></script>
+    <script src="../files/assets/js/bootoast.min.js"></script>
     <script>
 
         $(document).ready(()=>{
@@ -693,7 +694,7 @@
                 const user_info = JSON.parse(user_data)
                 fillUserData(user_info);
             }else{
-                window.location.href = '';
+                window.location.href = '/';
             }
         });
 
@@ -760,8 +761,7 @@
             $("#user_info_link").text(user_first_last_names);
         };
     </script>
-    {% block custom_js %}
-    {% endblock %}
+
 
 </body>
 
