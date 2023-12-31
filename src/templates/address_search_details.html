@@ -1,0 +1,165 @@
+{% extends 'master.html' %}
+
+{% block title %}
+    Address Search Details
+{% endblock %}
+
+
+{%  block page_content %}
+    <div class="page-header">
+        <h2 class="header-title">Address Details</h2>
+        <div class="header-sub-title">
+            <nav class="breadcrumb breadcrumb-dash">
+                <a href="home" class="breadcrumb-item"><i class="anticon anticon-home m-r-5"></i>Home</a>
+                <span class="breadcrumb-item active">Address Search Details</span>
+            </nav>
+        </div>
+    </div>
+    <div class="card">
+        <form id="operationalForm" style="display: none">
+            {% csrf_token %}
+        </form>
+        <div class="card-body">
+            <div class="bg-light form-group row">
+                <label for="innerAddressVal" class="col-sm-3 col-form-label">Inner Address:</label>
+                <label class="col-sm-9 col-form-label" id="innerAddressVal"></label>
+            </div>
+            <div class="bg-light form-group row">
+                <label for="addressVal" class="col-sm-3 col-form-label">Address:</label>
+                <label class="col-sm-9 col-form-label" id="addressVal"></label>
+            </div>
+            <div class="bg-white form-group row">
+                <label for="total-receivedVal" class="col-sm-3 col-form-label">Total Received:</label>
+                <label class="col-sm-9 col-form-label" id="total-receivedVal"></label>
+            </div>
+            <div class="bg-light form-group row">
+                <label for="total-sentVal" class="col-sm-3 col-form-label">Total Sent:</label>
+                <label class="col-sm-9 col-form-label" id="total-sentVal"></label>
+            </div>
+            <div class="bg-white form-group row">
+                <label for="balanceVal" class="col-sm-3 col-form-label">Balance:</label>
+                <label class="col-sm-9 col-form-label" id="balanceVal"></label>
+            </div>
+            <div class="bg-light form-group row">
+                <label for="unconfirmed-balanceVal" class="col-sm-3 col-form-label">Unconfirmed Balance:</label>
+                <label class="col-sm-9 col-form-label" id="unconfirmed-balanceVal"></label>
+            </div>
+            <div class="bg-white form-group row">
+                <label for="final-balanceVal" class="col-sm-3 col-form-label">Final Balance:</label>
+                <label class="col-sm-9 col-form-label" id="final-balanceVal"></label>
+            </div>
+            <div class="bg-light form-group row">
+                <label for="n-txVal" class="col-sm-3 col-form-label">Number of Transactions:</label>
+                <label class="col-sm-9 col-form-label" id="n-txVal"></label>
+            </div>
+            <div class="bg-white form-group row">
+                <label for="unconfirmed-n-txVal" class="col-sm-3 col-form-label">Number of Unconfirmed Translations:</label>
+                <label class="col-sm-9 col-form-label" id="unconfirmed-n-txVal"></label>
+            </div>
+            <div class="bg-light form-group row">
+                <label for="final-n-txVal" class="col-sm-3 col-form-label">Final Number of Transactions:</label>
+                <label class="col-sm-9 col-form-label" id="final-n-txVal"></label>
+            </div>
+            <div class="bg-white form-group row">
+                <label for="last-updatedVal" class="col-sm-3 col-form-label">Last Updated:</label>
+                <label class="col-sm-9 col-form-label" id="last-updatedVal"></label>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block custom_js %}
+    <script>
+        $(document).ready(()=>{
+           const queryString = window.location.search;
+            // Check if the user came here after registration.
+           if (!queryString.includes('address')){
+               // User should not be able to use this page if there is no address associated to the URL
+               window.location.href = 'home';
+           }
+
+           // Read the details for the address
+            const urlParams = new URLSearchParams(queryString);
+           if (urlParams.has('address')) {
+              const address = urlParams.get('address');
+              getAddressDetials(address)
+           }
+        });
+
+        /**
+         * Get the Address Detials from the endpoint
+         * @param address_id Address ID to be used
+         */
+        var getAddressDetials = (address) => {
+
+            const tokenizers = $('[name=csrfmiddlewaretoken]').attr('value'); // Use your method to get the CSRF token
+
+            const payload = {
+                "address": address
+            };
+
+            $.ajax({
+                url: 'api/v1/adr/rest/read_address_search_details/',
+                type: 'POST',
+                data: JSON.stringify(payload),
+                dataType: 'json',
+                contentType: 'application/json; charset=utf-8',
+                headers: { "X-CSRFToken": tokenizers },
+                error: function (xhr) {
+                    console.log('Error: ' + xhr.statusText);
+                    if(xhr.status === 500)
+                    {
+                        bootoast.toast({
+                           message: 'There is an internal error. Please contact system administrator!!',
+                           type: 'danger',
+                           position: 'right-top',
+                           timeout: 10,
+                           animationDuration: 300,
+                           dismissible: true
+                       });
+                    }
+                    if(xhr.status === 400)
+                    {
+                        bootoast.toast({
+                           message: 'Invalid data. Please check your username and password!!',
+                           type: 'danger',
+                           position: 'right-top',
+                           timeout: 10,
+                           animationDuration: 300,
+                           dismissible: true
+                       });
+                    }
+                },
+                success: function (result) {
+                    // Fill the form data
+                    fillDetailData(result)
+                },
+                async: false,
+                cache: false,
+                timeout: 10000,
+                processData: false
+            });
+        };
+
+        /**
+         * Fill the form with extracted data
+         * @param data Data to be used for filling the form in JSON format
+         */
+        var fillDetailData = (data) =>{
+            $("#innerAddressVal").text(data.inner_address);
+            $("#addressVal").text(data.address);
+            $("#total-receivedVal").text(data.total_received);
+            $("#total-sentVal").text(data.total_sent);
+            $("#balanceVal").text(data.balance);
+            $("#unconfirmed-balanceVal").text(data.unconfirmed_balance);
+            $("#final-balanceVal").text(data.final_balance);
+            $("#n-txVal").text(data.n_tx);
+            $("#unconfirmed-n-txVal").text(data.unconfirmed_n_tx);
+            $("#final-n-txVal").text(data.final_n_tx);
+            $("#last-updatedVal").text(data.last_updated);
+        }
+    </script>
+
+
+{% endblock %}
