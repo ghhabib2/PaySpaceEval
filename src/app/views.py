@@ -1,7 +1,11 @@
 import asyncio
+import base64
 import json
 from datetime import datetime
+from io import BytesIO
 
+import pyqrcode
+from pyqrcode import QRCode
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.core.files.storage import FileSystemStorage
@@ -499,6 +503,8 @@ class AddressManagement(viewsets.ViewSet):
 
         """
 
+
+
         serializer = AddressDetailRequestSerializer(data=request.data)
         if serializer.is_valid():
             try:
@@ -518,6 +524,13 @@ class AddressManagement(viewsets.ViewSet):
                                        datetime
                                             .fromisoformat(str(address_details.first().last_updated))
                                             .replace(tzinfo=None).replace(tzinfo=None))
+
+                    address_qrcode : QRCode = pyqrcode.create(address_to_be_used.address)
+                    qr_buffer = BytesIO()
+                    address_qrcode.png(qr_buffer, scale=8)  # Generate PNG image
+
+                    # Convert BytesIO object to Base64 string
+                    qr_base64 = base64.b64encode(qr_buffer.getvalue()).decode()
 
                     if time_difference.total_seconds() > 30:
 
@@ -540,6 +553,7 @@ class AddressManagement(viewsets.ViewSet):
                         record_to_update.save()
 
                         response_data = {
+                            "qrt_code_str" : qr_base64,
                             "address": address_to_be_used.address,
                             "total_received": address_info.total_received,
                             "total_sent": address_info.total_sent,
@@ -555,6 +569,7 @@ class AddressManagement(viewsets.ViewSet):
                     else:
                         # return the result
                         response_data = {
+                            "qrt_code_str": qr_base64,
                             "address": address_to_be_used.address,
                             "total_received": address_details.first().total_received,
                             "total_sent": address_details.first().total_sent,
@@ -575,7 +590,12 @@ class AddressManagement(viewsets.ViewSet):
                     address_info = block_chain_processor.check_address_status(
                         wallet_address=address_to_be_used.address)
 
+                    address_qrcode: QRCode = pyqrcode.create(address_to_be_used.address)
+                    qr_buffer = BytesIO()
+                    address_qrcode.png(qr_buffer, scale=8)  # Generate PNG image
 
+                    # Convert BytesIO object to Base64 string
+                    qr_base64 = base64.b64encode(qr_buffer.getvalue()).decode()
 
                     if(address_info is not None):
                         # Add the data to the database and return it as result
@@ -594,6 +614,7 @@ class AddressManagement(viewsets.ViewSet):
                         address_info_to_be_stored.save()
 
                         response_data = {
+                            "qrt_code_str": qr_base64,
                             "address": address_to_be_used.address,
                             "total_received": address_info.total_received,
                             "total_sent": address_info.total_sent,
@@ -678,6 +699,7 @@ class AddressManagement(viewsets.ViewSet):
 
                 if address_to_be_used.exists():
 
+
                     # Read the details
                     address_details : QuerySet[models.Address] = models.AddressInfo.objects.filter(
                         address_id=address_to_be_used.first().id)
@@ -686,6 +708,13 @@ class AddressManagement(viewsets.ViewSet):
                                        datetime
                                        .fromisoformat(str(address_details.first().last_updated))
                                        .replace(tzinfo=None).replace(tzinfo=None))
+
+                    address_qrcode: QRCode = pyqrcode.create(address_to_be_used.first().address)
+                    qr_buffer = BytesIO()
+                    address_qrcode.png(qr_buffer, scale=8)  # Generate PNG image
+
+                    # Convert BytesIO object to Base64 string
+                    qr_base64 = base64.b64encode(qr_buffer.getvalue()).decode()
 
                     if time_difference.total_seconds() > 30:
 
@@ -708,6 +737,7 @@ class AddressManagement(viewsets.ViewSet):
                         record_to_update.save()
 
                         response_data = {
+                            "qrt_code_str": qr_base64,
                             "inner_address": True,
                             "address": address_to_be_used.first().address,
                             "total_received": address_info.total_received,
@@ -724,6 +754,7 @@ class AddressManagement(viewsets.ViewSet):
                     else:
                         # return the result
                         response_data = {
+                            "qrt_code_str": qr_base64,
                             "inner_address": True,
                             "address": address_to_be_used.first().address,
                             "total_received": address_details.first().total_received,
@@ -747,7 +778,15 @@ class AddressManagement(viewsets.ViewSet):
 
                     if address_info is not None:
 
+                        address_qrcode: QRCode = pyqrcode.create(address)
+                        qr_buffer = BytesIO()
+                        address_qrcode.png(qr_buffer, scale=8)  # Generate PNG image
+
+                        # Convert BytesIO object to Base64 string
+                        qr_base64 = base64.b64encode(qr_buffer.getvalue()).decode()
+
                         response_data = {
+                            "qrt_code_str": qr_base64,
                             "inner_address" : False,
                             "address": address,
                             "total_received": address_info.total_received,
