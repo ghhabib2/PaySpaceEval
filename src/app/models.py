@@ -36,3 +36,21 @@ class AddressInfo(models.Model):
     last_updated = models.DateTimeField(help_text="Last updated time", null=True, blank=True)
 
 
+class Transaction(models.Model):
+    """
+    Transaction serializer class
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    from_address_id = models.ForeignKey(Address, on_delete=models.CASCADE, related_name='from_address_id',
+                                   help_text="Related Address", null=True, blank=True)
+    to_address = models.CharField(max_length=150, help_text="Output address value")
+    tx_hash = models.CharField(help_text="Transaction hash")
+    block_height = models.IntegerField(help_text="Block Height")
+    tx_input_n = models.IntegerField(help_text="Transaction input number")
+    tx_output_n = models.IntegerField(help_text="Transaction output number")
+    value = models.IntegerField(help_text="value")
+    ref_balance = models.IntegerField(help_text="Ref balance")
+    spent = models.BooleanField(help_text="Spent flag")
+    confirmations = models.IntegerField(help_text="Confirmations")
+    confirmed = models.DateTimeField("Confirmation Date and Time")
+    double_spend = models.BooleanField(help_text="Double Spend flag")
