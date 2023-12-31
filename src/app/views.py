@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 from django.shortcuts import render
 from django.http import HttpResponse
@@ -11,10 +12,10 @@ from rest_framework.permissions import AllowAny
 from django.contrib.auth.models import User
 from django.utils.decorators import method_decorator
 from serializers.user_endpoint_serialzers import AddUserSerializer, LoginUserSerializer
-from serializers.address_endpoint_serializers import AddressRequestSerializer
+from serializers.address_endpoint_serializers import AddressRequestSerializer, AddressDetailRequestSerializer
 from django.contrib.auth.hashers import make_password
 from.swagger import (AddUserXcodeAutoSchema, LoginUserXcodeAutoSchema, GenerateAddressXcodeAutoSchema,
-                     GenerateAddressListXcodeAutoSchema)
+                     GenerateAddressListXcodeAutoSchema, GetAddressDetialsXcodeAutoSchema)
 from utils.blockchain import BlockChain
 from . import settings
 from . import models
@@ -52,11 +53,21 @@ class AppPages:
     @classmethod
     def addresses(cls, request):
         """
-        Render the home pae
+        Render the Addresses page
         :param request:
         :return:
         """
         return render(request, 'addresses.html', {'name': 'Habib', 'title': "Addresses"})
+
+    @classmethod
+    def address_details(cls, request):
+        """
+        Render the Address Details page
+        :param request:
+        :return:
+        """
+        return render(request, 'address_details.html', {'name': 'Habib', 'title': "Addresse Details"})
+
 
 
 class UserManagement(viewsets.ViewSet):
@@ -398,6 +409,7 @@ class AddressManagement(viewsets.ViewSet):
 
                 response_data = [
                     {
+                        "address_id" : address.id,
                         "address": address.address,
                         "private": address.private[:4] + '*' * (len(address.private) - 30) ,
                         "public": address.public[:4] + '*' * (len(address.public) - 30),
@@ -427,3 +439,170 @@ class AddressManagement(viewsets.ViewSet):
                 "message": ""
             }
             return Response(response_data, content_type="application/json", status=status.HTTP_400_BAD_REQUEST)
+
+    @method_decorator(
+        decorator=swagger_auto_schema(
+            operation_summary="Return  the details of the address",
+            operation_description="""
+                           Return the details of the address
+
+                           Parameters:
+                           -----------
+
+                           - **request** (`HttpRequest`): Here is the list of parameters:
+                               - `address_id` : The target address ID
+
+                           Returns:
+                           --------
+
+                           - **`HttpResponse`**: Returning the address details information
+                           """,
+            responses=GetAddressDetialsXcodeAutoSchema.responses(),
+            auto_schema=GetAddressDetialsXcodeAutoSchema,
+            tags=['Address Endpoints']
+        )
+    )
+    @action(methods=['post'],
+            detail=False,
+            url_path='read_address_details',
+            permission_classes=[AllowAny, ])
+    def read_address_details(self, request):
+        """
+        Retrieve all address lists for a user.
+
+        """
+
+        serializer = AddressDetailRequestSerializer(data=request.data)
+        if serializer.is_valid():
+            try:
+
+                """
+                Retrieve the user information
+                """
+
+                address_id = request.data['address_id']
+                address_to_be_used = models.Address.objects.get(pk=address_id)
+                address_details: QuerySet[models.Address] = models.AddressInfo.objects.filter(Q(address_id=address_id))
+
+                if address_details.exists():
+
+                    # Check if the time difference if it is more than 30 seconds
+                    time_difference = (datetime.now() -
+                                       datetime
+                                            .fromisoformat(str(address_details.first().last_updated))
+                                            .replace(tzinfo=None).replace(tzinfo=None))
+
+                    if time_difference.total_seconds() > 30:
+
+                        # update the database again
+                        record_to_update = address_details.first()
+                        block_chain_processor = BlockChain()
+                        address_info = block_chain_processor.check_address_status(
+                            wallet_address=address_to_be_used.address)
+
+                        record_to_update.total_received = address_info.total_received
+                        record_to_update.total_sent = address_info.total_sent
+                        record_to_update.balance = address_info.balance
+                        record_to_update.unconfirmed_balance = address_info.unconfirmed_balance
+                        record_to_update.unconfirmed_n_tx = address_info.unconfirmed_n_tx
+                        record_to_update.final_balance = address_info.final_balance
+                        record_to_update.final_n_tx = address_info.final_n_tx
+                        record_to_update.n_tx = address_info.n_tx
+                        record_to_update.last_updated = datetime.now()
+
+                        record_to_update.save()
+
+                        response_data = {
+                            "address": address_to_be_used.address,
+                            "total_received": address_info.total_received,
+                            "total_sent": address_info.total_sent,
+                            "balance": address_info.balance,
+                            "unconfirmed_balance": address_info.unconfirmed_balance,
+                            "final_balance": address_info.final_balance,
+                            "n_tx": address_info.n_tx,
+                            "unconfirmed_n_tx": address_info.unconfirmed_n_tx,
+                            "final_n_tx": address_info.final_n_tx,
+                            "last_updated": datetime.now()
+                        }
+
+                    else:
+                        # return the result
+                        response_data = {
+                            "address": address_to_be_used.address,
+                            "total_received": address_details.first().total_received,
+                            "total_sent": address_details.first().total_sent,
+                            "balance": address_details.first().balance,
+                            "unconfirmed_balance": address_details.first().unconfirmed_balance,
+                            "final_balance": address_details.first().final_balance,
+                            "n_tx": address_details.first().n_tx,
+                            "unconfirmed_n_tx": address_details.first().unconfirmed_n_tx,
+                            "final_n_tx": address_details.first().final_n_tx,
+                            "last_updated": address_details.first().last_updated
+                        }
+
+                    return Response(response_data, content_type="application/json",
+                                    status=status.HTTP_200_OK)
+                else:
+                    # Check for the online available information
+                    block_chain_processor = BlockChain()
+                    address_info = block_chain_processor.check_address_status(
+                        wallet_address=address_to_be_used.address)
+
+
+
+                    if(address_info is not None):
+                        # Add the data to the database and return it as result
+                        address_info_to_be_stored = models.AddressInfo()
+                        address_info_to_be_stored.address_id = address_to_be_used
+                        address_info_to_be_stored.total_received = address_info.total_received
+                        address_info_to_be_stored.total_sent = address_info.total_sent
+                        address_info_to_be_stored.balance = address_info.balance
+                        address_info_to_be_stored.unconfirmed_balance = address_info.unconfirmed_balance
+                        address_info_to_be_stored.unconfirmed_n_tx = address_info.unconfirmed_n_tx
+                        address_info_to_be_stored.final_balance = address_info.final_balance
+                        address_info_to_be_stored.final_n_tx = address_info.final_n_tx
+                        address_info_to_be_stored.n_tx = address_info.n_tx
+                        address_info_to_be_stored.last_updated = datetime.now()
+
+                        address_info_to_be_stored.save()
+
+                        response_data = {
+                            "address": address_to_be_used.address,
+                            "total_received": address_info.total_received,
+                            "total_sent": address_info.total_sent,
+                            "balance": address_info.balance,
+                            "unconfirmed_balance": address_info.unconfirmed_balance,
+                            "final_balance": address_info.final_balance,
+                            "n_tx": address_info.n_tx,
+                            "unconfirmed_n_tx": address_info.unconfirmed_n_tx,
+                            "final_n_tx": address_info.final_n_tx,
+                            "last_updated": datetime.now()
+                        }
+
+                        return Response(response_data, content_type="application/json",
+                                        status=status.HTTP_200_OK)
+
+                    else:
+                        # Raise the error that no data found
+                        raise FileNotFoundError("The information is not available!")
+
+            except Exception as ex:
+                """
+                Return internal process error
+                """
+                response_data = {
+                    "error": f"There is an internal process error. Error: {ex}",
+                    "message": ""
+                }
+                return Response(response_data, content_type="application/json",
+                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        else:
+            """
+            Rerun data validation error
+            """
+            response_data = {
+                "error": "The data is not validated. Not able to proceed.",
+                "message": ""
+            }
+            return Response(response_data, content_type="application/json", status=status.HTTP_400_BAD_REQUEST)
+
