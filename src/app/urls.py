@@ -62,6 +62,7 @@ urlpatterns = [
     path('home', views.AppPages.home, name='home'),
     path('addresses', views.AppPages.addresses, name='addresses'),
     path('inner_outer_transaction', views.AppPages.inner_outer_transaction, name='Transaction'),
+    path('inner_inner_transaction', views.AppPages.inner_inner_transaction, name='Inner Transaction'),
     path('addressdetails', views.AppPages.address_details, name='addressDetails'),
     path('address_search_details', views.AppPages.address_search_details, name='addressDetails'),
     path('api/v1/users/', include(user_endpoints.urls)),

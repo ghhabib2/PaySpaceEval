@@ -100,6 +100,15 @@ class AppPages:
         return render(request, 'inner_outer_transaction.html', {'name': 'Habib',
                                                                 'title': "Transaction"})
 
+    @classmethod
+    def inner_inner_transaction(cls, request):
+        """
+        Render the Address Details page
+        :param request:
+        :return:
+        """
+        return render(request, 'inner_inner_transaction.html', {'name': 'Habib',
+                                                                'title': "Transaction"})
 
 
 class UserManagement(viewsets.ViewSet):
