@@ -9,6 +9,15 @@
 {% endblock %}
 
 {%  block page_content %}
+    <div class="page-header">
+        <h2 class="header-title">Addresses</h2>
+        <div class="header-sub-title">
+            <nav class="breadcrumb breadcrumb-dash">
+                <a href="home" class="breadcrumb-item"><i class="anticon anticon-home m-r-5"></i>Home</a>
+                <span class="breadcrumb-item active">Addresses</span>
+            </nav>
+        </div>
+    </div>
     <div class="card">
         <form id="operationalForm" style="display: none">
             {% csrf_token %}
@@ -180,7 +189,7 @@
             var colPrivate = '<td class="font-size-10">' + item.private + '</td>';
             var colPublic = '<td class="font-size-10">' + item.public + '</td>';
             var colWif = '<td class="font-size-10">' + item.wif + '</td>';
-            var coldDetails = '<td><a href="#"><i class="anticon anticon-eye font-size-20"></i></a></td>'
+            var coldDetails = '<td><a href="addressdetails?addressID=' + item.address_id +'"><i class="anticon anticon-eye font-size-20"></i></a></td>'
 
             var rowOrder = "<tr>"
                     + colAddress + colPrivate + colPublic + colWif  + coldDetails + "</tr>";

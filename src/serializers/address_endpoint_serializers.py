@@ -10,6 +10,7 @@ class AddressResultSerializer(serializers.Serializer):
     """
     Address Result Serializer
     """
+    address_id = serializers.UUIDField(required=True)
     address = serializers.CharField(required=True)
     private = serializers.CharField(required=True)
     public = serializers.CharField(required=True)

@@ -53,11 +53,21 @@ class AppPages:
     @classmethod
     def addresses(cls, request):
         """
-        Render the home pae
+        Render the Addresses page
         :param request:
         :return:
         """
         return render(request, 'addresses.html', {'name': 'Habib', 'title': "Addresses"})
+
+    @classmethod
+    def address_details(cls, request):
+        """
+        Render the Address Details page
+        :param request:
+        :return:
+        """
+        return render(request, 'address_details.html', {'name': 'Habib', 'title': "Addresse Details"})
+
 
 
 class UserManagement(viewsets.ViewSet):
@@ -399,6 +409,7 @@ class AddressManagement(viewsets.ViewSet):
 
                 response_data = [
                     {
+                        "address_id" : address.id,
                         "address": address.address,
                         "private": address.private[:4] + '*' * (len(address.private) - 30) ,
                         "public": address.public[:4] + '*' * (len(address.public) - 30),
