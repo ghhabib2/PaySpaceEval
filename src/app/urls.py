@@ -24,7 +24,7 @@ from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework import permissions
 from django.template.loader import render_to_string
-from .routes import user_routes, address_routes
+from .routes import user_routes, address_routes, transaction_routes
 
 
 user_endpoints = DefaultRouter()
@@ -36,6 +36,11 @@ address_endpoints = DefaultRouter()
 
 for route in address_routes:
     address_endpoints.register(route['regex'], route['viewset'], basename=route['basename'])
+
+transactions_endpoints = DefaultRouter()
+
+for route in transaction_routes:
+    transactions_endpoints.register(route['regex'], route['viewset'], basename=route['basename'])
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -56,9 +61,13 @@ urlpatterns = [
     path('sign-up', views.AppPages.sign_up, name='sign-up'),
     path('home', views.AppPages.home, name='home'),
     path('addresses', views.AppPages.addresses, name='addresses'),
+    path('inner_outer_transaction', views.AppPages.inner_outer_transaction, name='Transaction'),
+    path('inner_inner_transaction', views.AppPages.inner_inner_transaction, name='Inner Transaction'),
     path('addressdetails', views.AppPages.address_details, name='addressDetails'),
+    path('address_search_details', views.AppPages.address_search_details, name='addressDetails'),
     path('api/v1/users/', include(user_endpoints.urls)),
     path('api/v1/adr/', include(address_endpoints.urls)),
+    path('api/v1/txs/', include(transactions_endpoints.urls)),
     path('docs/redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc')
 ]
 

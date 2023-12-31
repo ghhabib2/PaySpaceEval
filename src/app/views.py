@@ -1,6 +1,11 @@
+import asyncio
+import base64
 import json
 from datetime import datetime
+from io import BytesIO
 
+import pyqrcode
+from pyqrcode import QRCode
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.core.files.storage import FileSystemStorage
@@ -12,10 +17,15 @@ from rest_framework.permissions import AllowAny
 from django.contrib.auth.models import User
 from django.utils.decorators import method_decorator
 from serializers.user_endpoint_serialzers import AddUserSerializer, LoginUserSerializer
-from serializers.address_endpoint_serializers import AddressRequestSerializer, AddressDetailRequestSerializer
+from serializers.address_endpoint_serializers import AddressRequestSerializer, AddressDetailRequestSerializer, \
+    AddressSearchRequestSerializer
+from serializers.transactions_endpoint_serializers import (TransactionRequestIOSerialize, TransactionRequestIISerialize,
+                                                           TransactionResultSerializer)
 from django.contrib.auth.hashers import make_password
-from.swagger import (AddUserXcodeAutoSchema, LoginUserXcodeAutoSchema, GenerateAddressXcodeAutoSchema,
-                     GenerateAddressListXcodeAutoSchema, GetAddressDetialsXcodeAutoSchema)
+from .swagger import (AddUserXcodeAutoSchema, LoginUserXcodeAutoSchema, GenerateAddressXcodeAutoSchema,
+                      GenerateAddressListXcodeAutoSchema, GetAddressDetialsXcodeAutoSchema,
+                      SendTransactionXcodeAutoSchema, GetTransactionsListXcodeAutoSchema,
+                      GetAddressSearchDetialsXcodeAutoSchema)
 from utils.blockchain import BlockChain
 from . import settings
 from . import models
@@ -66,8 +76,39 @@ class AppPages:
         :param request:
         :return:
         """
-        return render(request, 'address_details.html', {'name': 'Habib', 'title': "Addresse Details"})
+        return render(request, 'address_details.html', {'name': 'Habib',
+                                                        'title': "Address Details"})
 
+    @classmethod
+    def address_search_details(cls, request):
+        """
+        Render the Address Details page
+        :param request:
+        :return:
+        """
+        return render(request, 'address_search_details.html', {'name': 'Habib',
+                                                               'title': "Address Search Details"})
+
+
+    @classmethod
+    def inner_outer_transaction(cls, request):
+        """
+        Render the Address Details page
+        :param request:
+        :return:
+        """
+        return render(request, 'inner_outer_transaction.html', {'name': 'Habib',
+                                                                'title': "Transaction"})
+
+    @classmethod
+    def inner_inner_transaction(cls, request):
+        """
+        Render the Address Details page
+        :param request:
+        :return:
+        """
+        return render(request, 'inner_inner_transaction.html', {'name': 'Habib',
+                                                                'title': "Transaction"})
 
 
 class UserManagement(viewsets.ViewSet):
@@ -214,7 +255,6 @@ class UserManagement(viewsets.ViewSet):
 
             user_data = User.objects.filter(Q(username=username) &  Q(password=password))
 
-            print(user_data)
 
             if user_data.exists() and bool(user_data.first().is_active):
                 # return the user data
@@ -472,6 +512,8 @@ class AddressManagement(viewsets.ViewSet):
 
         """
 
+
+
         serializer = AddressDetailRequestSerializer(data=request.data)
         if serializer.is_valid():
             try:
@@ -491,6 +533,13 @@ class AddressManagement(viewsets.ViewSet):
                                        datetime
                                             .fromisoformat(str(address_details.first().last_updated))
                                             .replace(tzinfo=None).replace(tzinfo=None))
+
+                    address_qrcode : QRCode = pyqrcode.create(address_to_be_used.address)
+                    qr_buffer = BytesIO()
+                    address_qrcode.png(qr_buffer, scale=8)  # Generate PNG image
+
+                    # Convert BytesIO object to Base64 string
+                    qr_base64 = base64.b64encode(qr_buffer.getvalue()).decode()
 
                     if time_difference.total_seconds() > 30:
 
@@ -513,6 +562,7 @@ class AddressManagement(viewsets.ViewSet):
                         record_to_update.save()
 
                         response_data = {
+                            "qrt_code_str" : qr_base64,
                             "address": address_to_be_used.address,
                             "total_received": address_info.total_received,
                             "total_sent": address_info.total_sent,
@@ -528,6 +578,7 @@ class AddressManagement(viewsets.ViewSet):
                     else:
                         # return the result
                         response_data = {
+                            "qrt_code_str": qr_base64,
                             "address": address_to_be_used.address,
                             "total_received": address_details.first().total_received,
                             "total_sent": address_details.first().total_sent,
@@ -548,7 +599,12 @@ class AddressManagement(viewsets.ViewSet):
                     address_info = block_chain_processor.check_address_status(
                         wallet_address=address_to_be_used.address)
 
+                    address_qrcode: QRCode = pyqrcode.create(address_to_be_used.address)
+                    qr_buffer = BytesIO()
+                    address_qrcode.png(qr_buffer, scale=8)  # Generate PNG image
 
+                    # Convert BytesIO object to Base64 string
+                    qr_base64 = base64.b64encode(qr_buffer.getvalue()).decode()
 
                     if(address_info is not None):
                         # Add the data to the database and return it as result
@@ -567,6 +623,7 @@ class AddressManagement(viewsets.ViewSet):
                         address_info_to_be_stored.save()
 
                         response_data = {
+                            "qrt_code_str": qr_base64,
                             "address": address_to_be_used.address,
                             "total_received": address_info.total_received,
                             "total_sent": address_info.total_sent,
@@ -606,3 +663,597 @@ class AddressManagement(viewsets.ViewSet):
             }
             return Response(response_data, content_type="application/json", status=status.HTTP_400_BAD_REQUEST)
 
+    @method_decorator(
+        decorator=swagger_auto_schema(
+            operation_summary="Return  the details of the address searched by the user",
+            operation_description="""
+                               Return the details of the address searched by the user
+
+                               Parameters:
+                               -----------
+
+                               - **request** (`HttpRequest`): Here is the list of parameters:
+                                   - `address` : The address user searched
+
+                               Returns:
+                               --------
+
+                               - **`HttpResponse`**: Returning the address details information
+                               """,
+            responses=GetAddressSearchDetialsXcodeAutoSchema.responses(),
+            auto_schema=GetAddressSearchDetialsXcodeAutoSchema,
+            tags=['Address Endpoints']
+        )
+    )
+    @action(methods=['post'],
+            detail=False,
+            url_path='read_address_search_details',
+            permission_classes=[AllowAny, ])
+    def read_address_search_details(self, request):
+        """
+        Retrieve all address lists for a user.
+
+        """
+
+        serializer = AddressSearchRequestSerializer(data=request.data)
+        if serializer.is_valid():
+            try:
+
+                """
+                Retrieve the user information
+                """
+
+                address = request.data['address']
+                address_to_be_used : QuerySet[models.Address] = models.Address.objects.filter(address=address)
+
+                if address_to_be_used.exists():
+
+
+                    # Read the details
+                    address_details : QuerySet[models.Address] = models.AddressInfo.objects.filter(
+                        address_id=address_to_be_used.first().id)
+                    # Check if the time difference if it is more than 30 seconds
+                    time_difference = (datetime.now() -
+                                       datetime
+                                       .fromisoformat(str(address_details.first().last_updated))
+                                       .replace(tzinfo=None).replace(tzinfo=None))
+
+                    address_qrcode: QRCode = pyqrcode.create(address_to_be_used.first().address)
+                    qr_buffer = BytesIO()
+                    address_qrcode.png(qr_buffer, scale=8)  # Generate PNG image
+
+                    # Convert BytesIO object to Base64 string
+                    qr_base64 = base64.b64encode(qr_buffer.getvalue()).decode()
+
+                    if time_difference.total_seconds() > 30:
+
+                        # update the database again
+                        record_to_update = address_details.first()
+                        block_chain_processor = BlockChain()
+                        address_info = block_chain_processor.check_address_status(
+                            wallet_address=address_to_be_used.first().address)
+
+                        record_to_update.total_received = address_info.total_received
+                        record_to_update.total_sent = address_info.total_sent
+                        record_to_update.balance = address_info.balance
+                        record_to_update.unconfirmed_balance = address_info.unconfirmed_balance
+                        record_to_update.unconfirmed_n_tx = address_info.unconfirmed_n_tx
+                        record_to_update.final_balance = address_info.final_balance
+                        record_to_update.final_n_tx = address_info.final_n_tx
+                        record_to_update.n_tx = address_info.n_tx
+                        record_to_update.last_updated = datetime.now()
+
+                        record_to_update.save()
+
+                        response_data = {
+                            "qrt_code_str": qr_base64,
+                            "inner_address": True,
+                            "address": address_to_be_used.first().address,
+                            "total_received": address_info.total_received,
+                            "total_sent": address_info.total_sent,
+                            "balance": address_info.balance,
+                            "unconfirmed_balance": address_info.unconfirmed_balance,
+                            "final_balance": address_info.final_balance,
+                            "n_tx": address_info.n_tx,
+                            "unconfirmed_n_tx": address_info.unconfirmed_n_tx,
+                            "final_n_tx": address_info.final_n_tx,
+                            "last_updated": datetime.now()
+                        }
+
+                    else:
+                        # return the result
+                        response_data = {
+                            "qrt_code_str": qr_base64,
+                            "inner_address": True,
+                            "address": address_to_be_used.first().address,
+                            "total_received": address_details.first().total_received,
+                            "total_sent": address_details.first().total_sent,
+                            "balance": address_details.first().balance,
+                            "unconfirmed_balance": address_details.first().unconfirmed_balance,
+                            "final_balance": address_details.first().final_balance,
+                            "n_tx": address_details.first().n_tx,
+                            "unconfirmed_n_tx": address_details.first().unconfirmed_n_tx,
+                            "final_n_tx": address_details.first().final_n_tx,
+                            "last_updated": address_details.first().last_updated
+                        }
+
+                    return Response(response_data, content_type="application/json",
+                                    status=status.HTTP_200_OK)
+                else:
+                    # Check for the online available information
+                    block_chain_processor = BlockChain()
+                    address_info = block_chain_processor.check_address_status(
+                        wallet_address=address)
+
+                    if address_info is not None:
+
+                        address_qrcode: QRCode = pyqrcode.create(address)
+                        qr_buffer = BytesIO()
+                        address_qrcode.png(qr_buffer, scale=8)  # Generate PNG image
+
+                        # Convert BytesIO object to Base64 string
+                        qr_base64 = base64.b64encode(qr_buffer.getvalue()).decode()
+
+                        response_data = {
+                            "qrt_code_str": qr_base64,
+                            "inner_address" : False,
+                            "address": address,
+                            "total_received": address_info.total_received,
+                            "total_sent": address_info.total_sent,
+                            "balance": address_info.balance,
+                            "unconfirmed_balance": address_info.unconfirmed_balance,
+                            "final_balance": address_info.final_balance,
+                            "n_tx": address_info.n_tx,
+                            "unconfirmed_n_tx": address_info.unconfirmed_n_tx,
+                            "final_n_tx": address_info.final_n_tx,
+                            "last_updated": datetime.now()
+                        }
+
+                        return Response(response_data, content_type="application/json",
+                                        status=status.HTTP_200_OK)
+                    else:
+                        response_data = {
+                            "error": f"No result found!",
+                            "message": ""
+                        }
+                        return Response(response_data, content_type="application/json",
+                                        status=status.HTTP_404_NOT_FOUND)
+            except Exception as ex:
+                """
+                Return internal process error
+                """
+                response_data = {
+                    "error": f"There is an internal process error. Error: {ex}",
+                    "message": ""
+                }
+                return Response(response_data, content_type="application/json",
+                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        else:
+            """
+            Rerun data validation error
+            """
+            response_data = {
+                "error": "The data is not validated. Not able to proceed.",
+                "message": ""
+            }
+            return Response(response_data, content_type="application/json", status=status.HTTP_400_BAD_REQUEST)
+
+class TransactionsManagement(viewsets.ViewSet):
+    @method_decorator(
+        decorator=swagger_auto_schema(
+            operation_summary="Send transactions request",
+            operation_description="""
+                        Send transaction request to the endpoint and return the result
+
+                        Parameters:
+                        -----------
+
+                        - **request** (`HttpRequest`): Here is the list of parameters:
+                            - `input_address_id` : Input Address for transaction
+                            - `output_address` : Output Address for transaction
+                            - `amount` : Amount of the transaction
+
+                        Returns:
+                        --------
+
+                        - **`HttpResponse`**: Returning the address information
+                        """,
+            responses=SendTransactionXcodeAutoSchema.responses(),
+            auto_schema=SendTransactionXcodeAutoSchema,
+            tags=['Transaction Endpoints']
+        )
+    )
+    @action(methods=['post'],
+            detail=False,
+            url_path='send_transaction',
+            permission_classes=[AllowAny, ])
+    def send_transaction(self, request):
+        """
+        Generating an addrress for the user
+        :param request:
+        :return: The generated results
+        """
+
+        serializer = TransactionRequestIOSerialize(data=request.data)
+        if serializer.is_valid():
+            try:
+                """
+                Extract the data from the request
+                """
+                input_address_id = serializer.validated_data['input_address_id']
+
+                address_to_be_used = models.Address.objects.get(pk=input_address_id)
+
+                input_address = address_to_be_used.address
+                output_address = serializer.validated_data['output_address']
+                private_key = address_to_be_used.private
+                public_key = address_to_be_used.public
+                amount = serializer.validated_data['amount']
+
+                """
+                Send the transaction request
+                """
+                block_chain_processor = BlockChain()
+
+                data  = asyncio.run(block_chain_processor.send_transaction(
+                    input_address=input_address,
+                    output_address=output_address,
+                    private_kes=[private_key],
+                    public_keys=[public_key],
+                    value=amount
+                ))
+
+                """
+                Check if there is any error inside the data
+                """
+                assert 'errors' not in data
+
+                """
+                Map the data to the Transaction Serializer
+                """
+                transaction_result = TransactionResultSerializer()
+
+                transaction_result.from_address = data["tx"]["inputs"][0]["addresses"][0]
+                transaction_result.to_address = data["tx"]["outputs"][0]["addresses"][0]
+                transaction_result.block_height = data["tx"]["block_height"]
+                transaction_result.block_index = data["tx"]["block_index"]
+                transaction_result.hash = data["tx"]["hash"]
+                transaction_result.total = data["tx"]["total"]
+                transaction_result.fees = data["tx"]["fees"]
+                transaction_result.size = data["tx"]["size"]
+                transaction_result.vsize = data["tx"]["vsize"]
+                transaction_result.preference = data["tx"]["preference"]
+                transaction_result.relayed_by = data["tx"]["relayed_by"]
+                transaction_result.received = data["tx"]["received"]
+                transaction_result.ver = data["tx"]["ver"]
+                transaction_result.double_spend = data["tx"]["double_spend"]
+                transaction_result.vin_sz = data["tx"]["vin_sz"]
+                transaction_result.vout_sz = data["tx"]["vout_sz"]
+                transaction_result.confirmations = data["tx"]["confirmations"]
+
+                """
+                Read the data for input address
+                """
+
+                """
+                Add a record to the 
+                """
+                transaction_to_be_stored = models.Transaction()
+
+                transaction_to_be_stored.from_address_id = address_to_be_used
+                transaction_to_be_stored.to_address = transaction_result.to_address
+                transaction_to_be_stored.block_height = transaction_result.block_height
+                transaction_to_be_stored.block_index = transaction_result.block_index
+                transaction_to_be_stored.hash = transaction_result.hash
+                transaction_to_be_stored.total = transaction_result.total
+                transaction_to_be_stored.fees = transaction_result.fees
+                transaction_to_be_stored.size = transaction_result.size
+                transaction_to_be_stored.vsize = transaction_result.vsize
+                transaction_to_be_stored.preference = transaction_result.preference
+                transaction_to_be_stored.relayed_by = transaction_result.relayed_by
+                transaction_to_be_stored.received = transaction_result.received
+                transaction_to_be_stored.ver = transaction_result.ver
+                transaction_to_be_stored.double_spend = transaction_result.double_spend
+                transaction_to_be_stored.vin_sz = transaction_result.vin_sz
+                transaction_to_be_stored.vout_sz = transaction_result.vout_sz
+                transaction_to_be_stored.confirmations = transaction_result.confirmations
+
+                transaction_to_be_stored.save()
+
+                response_data = {
+                    "from_address": transaction_result.from_address,
+                    "to_address": transaction_result.to_address,
+                    "block_index": transaction_result.block_index,
+                    "block_height": transaction_result.block_height,
+                    "hash": transaction_result.hash,
+                    "total": transaction_result.total,
+                    "fees": transaction_result.fees,
+                    "size": transaction_result.size,
+                    "vsize": transaction_result.vsize,
+                    "preference": transaction_result.preference,
+                    "relayed_by": transaction_result.relayed_by,
+                    "received": transaction_result.received,
+                    "ver": transaction_result.ver,
+                    "double_spend": transaction_result.double_spend,
+                    "vin_sz": transaction_result.vin_sz,
+                    "vout_sz": transaction_result.vout_sz,
+                    "confirmations": transaction_result.confirmations
+                }
+
+                return Response(response_data, content_type="application/json",
+                                status=status.HTTP_201_CREATED)
+            except Exception as ex:
+                """
+                Return internal process error
+                """
+                response_data = {
+                    "error": f"There is an internal process error. Error: {ex}",
+                    "message": ""
+                }
+                return Response(response_data, content_type="application/json",
+                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        else:
+            """
+            Rerun data validation error
+            """
+            response_data = {
+                "error": "The data is not validated. Not able to proceed.",
+                "message": ""
+            }
+            return Response(response_data, content_type="application/json", status=status.HTTP_400_BAD_REQUEST)
+
+    @method_decorator(
+        decorator=swagger_auto_schema(
+            operation_summary="Send transaction Inner to Inner",
+            operation_description="""
+                            Send transaction from inner address to another inner address
+
+                            Parameters:
+                            -----------
+
+                            - **request** (`HttpRequest`): Here is the list of parameters:
+                                - `input_address_id` : Input Address for transaction
+                                - `output_address_id` : Output Address for transaction
+                                - `amount` : Amount of the transaction
+
+                            Returns:
+                            --------
+
+                            - **`HttpResponse`**: Returning the address information
+                            """,
+            responses=SendTransactionXcodeAutoSchema.responses(),
+            auto_schema=SendTransactionXcodeAutoSchema,
+            tags=['Transaction Endpoints']
+        )
+    )
+    @action(methods=['post'],
+            detail=False,
+            url_path='send_transaction_ii',
+            permission_classes=[AllowAny, ])
+    def send_transaction_ii(self, request):
+        """
+        Generating an addrress for the user
+        :param request:
+        :return: The generated results
+        """
+
+        serializer = TransactionRequestIISerialize(data=request.data)
+        if serializer.is_valid():
+            try:
+                """
+                Extract the data from the request
+                """
+                input_address_id = serializer.validated_data['input_address_id']
+                output_address_id = serializer.validated_data['output_address_id']
+
+                input_address_to_be_used = models.Address.objects.get(pk=input_address_id)
+                output_address_to_be_used = models.Address.objects.get(pk=output_address_id)
+
+                input_address = input_address_to_be_used.address
+                output_address = output_address_to_be_used.address
+                private_key = input_address_to_be_used.private
+                public_key = input_address_to_be_used.public
+                amount = serializer.validated_data['amount']
+
+                """
+                Send the transaction request
+                """
+                block_chain_processor = BlockChain()
+
+                data = asyncio.run(block_chain_processor.send_transaction(
+                    input_address=input_address,
+                    output_address=output_address,
+                    private_kes=[private_key],
+                    public_keys=[public_key],
+                    value=amount
+                ))
+
+                """
+                Check if there is any error inside the data
+                """
+                assert 'errors' not in data
+
+                """
+                Map the data to the Transaction Serializer
+                """
+                transaction_result = TransactionResultSerializer()
+
+                transaction_result.from_address = data["tx"]["inputs"][0]["addresses"][0]
+                transaction_result.to_address = data["tx"]["outputs"][0]["addresses"][0]
+                transaction_result.block_height = data["tx"]["block_height"]
+                transaction_result.block_index = data["tx"]["block_index"]
+                transaction_result.hash = data["tx"]["hash"]
+                transaction_result.total = data["tx"]["total"]
+                transaction_result.fees = data["tx"]["fees"]
+                transaction_result.size = data["tx"]["size"]
+                transaction_result.vsize = data["tx"]["vsize"]
+                transaction_result.preference = data["tx"]["preference"]
+                transaction_result.relayed_by = data["tx"]["relayed_by"]
+                transaction_result.received = data["tx"]["received"]
+                transaction_result.ver = data["tx"]["ver"]
+                transaction_result.double_spend = data["tx"]["double_spend"]
+                transaction_result.vin_sz = data["tx"]["vin_sz"]
+                transaction_result.vout_sz = data["tx"]["vout_sz"]
+                transaction_result.confirmations = data["tx"]["confirmations"]
+
+                """
+                Read the data for input address
+                """
+
+                """
+                Add a record to the 
+                """
+                transaction_to_be_stored = models.Transaction()
+
+                transaction_to_be_stored.from_address_id = input_address_to_be_used
+                transaction_to_be_stored.to_address = transaction_result.to_address
+                transaction_to_be_stored.block_height = transaction_result.block_height
+                transaction_to_be_stored.block_index = transaction_result.block_index
+                transaction_to_be_stored.hash = transaction_result.hash
+                transaction_to_be_stored.total = transaction_result.total
+                transaction_to_be_stored.fees = transaction_result.fees
+                transaction_to_be_stored.size = transaction_result.size
+                transaction_to_be_stored.vsize = transaction_result.vsize
+                transaction_to_be_stored.preference = transaction_result.preference
+                transaction_to_be_stored.relayed_by = transaction_result.relayed_by
+                transaction_to_be_stored.received = transaction_result.received
+                transaction_to_be_stored.ver = transaction_result.ver
+                transaction_to_be_stored.double_spend = transaction_result.double_spend
+                transaction_to_be_stored.vin_sz = transaction_result.vin_sz
+                transaction_to_be_stored.vout_sz = transaction_result.vout_sz
+                transaction_to_be_stored.confirmations = transaction_result.confirmations
+
+                transaction_to_be_stored.save()
+
+                response_data = {
+                    "from_address": transaction_result.from_address,
+                    "to_address": transaction_result.to_address,
+                    "block_index": transaction_result.block_index,
+                    "block_height": transaction_result.block_height,
+                    "hash": transaction_result.hash,
+                    "total": transaction_result.total,
+                    "fees": transaction_result.fees,
+                    "size": transaction_result.size,
+                    "vsize": transaction_result.vsize,
+                    "preference": transaction_result.preference,
+                    "relayed_by": transaction_result.relayed_by,
+                    "received": transaction_result.received,
+                    "ver": transaction_result.ver,
+                    "double_spend": transaction_result.double_spend,
+                    "vin_sz": transaction_result.vin_sz,
+                    "vout_sz": transaction_result.vout_sz,
+                    "confirmations": transaction_result.confirmations
+                }
+
+                return Response(response_data, content_type="application/json",
+                                status=status.HTTP_201_CREATED)
+            except Exception as ex:
+                """
+                Return internal process error
+                """
+                response_data = {
+                    "error": f"There is an internal process error. Error: {ex}",
+                    "message": ""
+                }
+                return Response(response_data, content_type="application/json",
+                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        else:
+            """
+            Rerun data validation error
+            """
+            response_data = {
+                "error": "The data is not validated. Not able to proceed.",
+                "message": ""
+            }
+            return Response(response_data, content_type="application/json", status=status.HTTP_400_BAD_REQUEST)
+
+    @method_decorator(
+        decorator=swagger_auto_schema(
+            operation_summary="Get the transaction list",
+            operation_description="""
+                            Get the transaction list based on the address id information
+
+                            Parameters:
+                            -----------
+
+                            - **request** (`HttpRequest`): Here is the list of parameters:
+                                - `address_id` : Address ID for transactions list
+
+                            Returns:
+                            --------
+
+                            - **`HttpResponse`**: Returning the address information
+                            """,
+            responses=GetTransactionsListXcodeAutoSchema.responses(),
+            auto_schema=GetTransactionsListXcodeAutoSchema,
+            tags=['Transaction Endpoints']
+        )
+    )
+    @action(methods=['post'],
+            detail=False,
+            url_path='read_transactions_list',
+            permission_classes=[AllowAny, ])
+    def read_transactions_list(self, request):
+        """
+        Retrieve all address lists for a user.
+
+        """
+
+        serializer = AddressDetailRequestSerializer(data=request.data)
+        if serializer.is_valid():
+            try:
+
+                """
+                Retrieve the user information
+                """
+
+                address_id = request.data['address_id']
+                address_to_be_used = models.Address.objects.get(pk=address_id)
+                address_list: QuerySet[models.Transaction] = models.Transaction.objects.filter(
+                    Q(from_address_id=address_id)
+                )
+
+                response_data = [
+                        {
+                            "from_address": address_to_be_used.address,
+                            "to_address": transaction_result.to_address,
+                            "block_index": transaction_result.block_index,
+                            "block_height": transaction_result.block_height,
+                            "hash": transaction_result.hash,
+                            "total": transaction_result.total,
+                            "fees": transaction_result.fees,
+                            "size": transaction_result.size,
+                            "vsize": transaction_result.vsize,
+                            "preference": transaction_result.preference,
+                            "relayed_by": transaction_result.relayed_by,
+                            "received": transaction_result.received,
+                            "ver": transaction_result.ver,
+                            "double_spend": transaction_result.double_spend,
+                            "vin_sz": transaction_result.vin_sz,
+                            "vout_sz": transaction_result.vout_sz,
+                            "confirmations": transaction_result.confirmations
+                        }
+                    for transaction_result in address_list]
+
+                return Response(response_data, content_type="application/json",
+                                status=status.HTTP_200_OK)
+
+            except Exception as ex:
+                """
+                Return internal process error
+                """
+                response_data = {
+                    "error": f"There is an internal process error. Error: {ex}",
+                    "message": ""
+                }
+                return Response(response_data, content_type="application/json",
+                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        else:
+            """
+            Rerun data validation error
+            """
+            response_data = {
+                "error": "The data is not validated. Not able to proceed.",
+                "message": ""
+            }
+            return Response(response_data, content_type="application/json", status=status.HTTP_400_BAD_REQUEST)

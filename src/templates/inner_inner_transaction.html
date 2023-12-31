@@ -1,0 +1,357 @@
+{% extends 'master.html' %}
+
+{% block title %}
+    Transaction
+{% endblock %}
+
+{% block custom_css %}
+    <link href="../files/assets/vendors/select2/select2.css" rel="stylesheet">
+{% endblock  %}
+
+
+{%  block page_content %}
+    <div class="page-header">
+        <h2 class="header-title">Address Details</h2>
+        <div class="header-sub-title">
+            <nav class="breadcrumb breadcrumb-dash">
+                <a href="home" class="breadcrumb-item"><i class="anticon anticon-home m-r-5"></i>Home</a>
+                <span class="breadcrumb-item active">Transaction</span>
+            </nav>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <form id="sendTransactionForm">
+                {% csrf_token %}
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="input_address_dropdown">Input Address</label>
+                        <div class="m-b-15">
+                            <select class="select2" id="input_address_dropdown" name="state">
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="amount_txt">Input Balance</label>
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">$</span>
+                            </div>
+                            <input type="text" class="form-control" id="balance_txt"  disabled="">
+                            <div class="input-group-append">
+                                <span class="input-group-text">.00</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="input_address_dropdown">Output Address</label>
+                        <div class="m-b-15">
+                            <select class="select2" id="output_address_dropdown" name="state">
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="amount_txt">Amount</label>
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">$</span>
+                            </div>
+                            <input type="text" class="form-control" id="amount_txt" aria-label="Amount (to the nearest dollar)">
+                            <div class="input-group-append">
+                                <span class="input-group-text">.00</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group text-left">
+                        <button type="reset" class="btn btn-danger m-r-5">Clear</button>
+                        <button type="submit" class="btn btn-primary m-r-5">Transfer Amount</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="transaction-modal-confirm" tabindex="-1" role="dialog" class="modal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Sending Transaction</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <i class="anticon anticon-close"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to send this transaction?!</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger m-r-10" data-dismiss="modal">No</button>
+                    <button type="button" id="btn-transaction-confirm" class="btn btn-primary">Send Transaction</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block custom_js %}
+    <script src="../files/assets/vendors/select2/select2.min.js"></script>
+    <script>
+
+        $(document).ready(()=>{
+            var user_data = JSON.parse(checkCookieData('user_data'));
+            if (user_data !== null)
+            {
+                fill_options(user_data.user_id);
+            }
+
+            const input_address_dropdown = '#input_address_dropdown';
+            const output_address_dropdown = '#output_address_dropdown';
+
+            // Set the style for the Address dropdown
+            $(input_address_dropdown).select2();
+            $(output_address_dropdown).select2();
+
+            // Make sure we are checking the value when it is changing
+            $(input_address_dropdown).on("change", () => {
+                getAddressDetials($(input_address_dropdown).val());
+            });
+
+            $("#sendTransactionForm").submit((event) => {
+                // Stop the form submission
+                event.preventDefault();
+                // Show the confirmation modal
+                $("#transaction-modal-confirm").modal({
+                    "focus" : false,
+                    "keyboard" : false,
+                    "show" : true
+                });
+            });
+
+            $("#btn-transaction-confirm").on("click", () => {
+                // Hide the modal
+                $("#transaction-modal-confirm").modal("hide");
+                sendTransaction();
+            });
+
+        });
+
+        /**
+         * Get the Address Detials from the endpoint
+         * @param address_id Address ID to be used
+         */
+        var getAddressDetials = (address_id) => {
+
+            const tokenizers = $('[name=csrfmiddlewaretoken]').attr('value'); // Use your method to get the CSRF token
+
+            const payload = {
+                "address_id": address_id
+            };
+
+            $.ajax({
+                url: 'api/v1/adr/rest/read_address_details/',
+                type: 'POST',
+                data: JSON.stringify(payload),
+                dataType: 'json',
+                contentType: 'application/json; charset=utf-8',
+                headers: { "X-CSRFToken": tokenizers },
+                error: function (xhr) {
+                    console.log('Error: ' + xhr.statusText);
+                    if(xhr.status === 500)
+                    {
+                        bootoast.toast({
+                           message: 'There is an internal error. Please contact system administrator!!',
+                           type: 'danger',
+                           position: 'right-top',
+                           timeout: 10,
+                           animationDuration: 300,
+                           dismissible: true
+                       });
+                    }
+                    if(xhr.status === 400)
+                    {
+                        bootoast.toast({
+                           message: 'Invalid data. Please check your username and password!!',
+                           type: 'danger',
+                           position: 'right-top',
+                           timeout: 10,
+                           animationDuration: 300,
+                           dismissible: true
+                       });
+                    }
+                },
+                success: function (result) {
+                    // Fill the form data
+                    fillBalance(result)
+                },
+                async: false,
+                cache: false,
+                timeout: 10000,
+                processData: false
+            });
+        };
+
+        /**
+         * Fill the form with extracted data
+         * @param data Data to be used for filling the form in JSON format
+         */
+        var fillBalance = (data) =>{
+            $("#balance_txt").val(data.final_balance);
+        }
+
+        /**
+         * Fill the addresses for the user into the table
+         * @param user_id User ID
+         */
+        var fill_options = (user_id) => {
+
+            const tokenizers = $('[name=csrfmiddlewaretoken]').attr('value'); // Use your method to get the CSRF token
+
+            const payload = {
+                "user_id" : user_id
+            };
+
+            $.ajax({
+                    url: 'api/v1/adr/rest/read_address_list/',
+                    type: 'POST',
+                    data: JSON.stringify(payload),
+                    dataType: 'json',
+                    contentType: 'application/json; charset=utf-8',
+                    headers: { "X-CSRFToken": tokenizers },
+                    error: function (xhr) {
+                        console.log('Error: ' + xhr.statusText);
+                        if(xhr.status === 500)
+                        {
+                            bootoast.toast({
+                               message: 'An internal error happens. We are not able to process your request now!!',
+                               type: 'danger',
+                               position: 'right-top',
+                               timeout: 10,
+                               animationDuration: 300,
+                               dismissible: true
+                           });
+                        }
+                        if(xhr.status === 400)
+                        {
+                            bootoast.toast({
+                               message: 'Invalid data.!!',
+                               type: 'danger',
+                               position: 'right-top',
+                               timeout: 10,
+                               animationDuration: 300,
+                               dismissible: true
+                           });
+                        }
+                    },
+                    success: function (result) {
+                        // Add the user data to the cookies
+                        // Clear the table
+                        emptyOptions();
+                        // Add the rows to the table
+                        result.forEach(function (item) {
+                            addAddressOptionNew(item);
+                        });
+                        // Fill the balance for the first item
+                        getAddressDetials(result[0].address_id)
+                    },
+                    async: false,
+                    cache: false,
+                    timeout: 10000,
+                    processData: false
+                });
+        }
+
+        /**
+         * Clear the Options in the
+         */
+        var emptyOptions = function () {
+            $('#input_address_dropdown').html('');
+            $('#output_address_dropdown').html('');
+        }
+
+        /**
+         * Adding the new Options to the select
+         * @param item Items to be used in the table
+         */
+        var addAddressOptionNew = function (item) {
+
+            var newOption1 = $('<option>').val(item.address_id).text(item.address);
+            var newOption2 = $('<option>').val(item.address_id).text(item.address);
+
+            $('#input_address_dropdown').append(newOption1);
+            $('#output_address_dropdown').append(newOption2);
+        }
+
+
+
+        /**
+         * Dending the Transaction based on the provided Data
+         */
+        var sendTransaction = () => {
+
+            const tokenizers = $('[name=csrfmiddlewaretoken]').attr('value'); // Use your method to get the CSRF token
+
+            const payload = {
+                "input_address_id": $('#input_address_dropdown').val(),
+                "output_address_id" : $("#output_address_dropdown").val(),
+                "amount" : $("#amount_txt").val()
+            };
+
+            $.ajax({
+                url: 'api/v1/txs/rest/send_transaction_ii/',
+                type: 'POST',
+                data: JSON.stringify(payload),
+                dataType: 'json',
+                contentType: 'application/json; charset=utf-8',
+                headers: { "X-CSRFToken": tokenizers },
+                error: function (xhr) {
+                    console.log('Error: ' + xhr.statusText);
+                    if(xhr.status === 500)
+                    {
+                        bootoast.toast({
+                           message: 'There is an internal error. Please contact system administrator!!',
+                           type: 'danger',
+                           position: 'right-top',
+                           timeout: 10,
+                           animationDuration: 300,
+                           dismissible: true
+                       });
+                    }
+                    if(xhr.status === 400)
+                    {
+                        bootoast.toast({
+                           message: 'Invalid data. Please check your username and password!!',
+                           type: 'danger',
+                           position: 'right-top',
+                           timeout: 10,
+                           animationDuration: 300,
+                           dismissible: true
+                       });
+                    }
+                },
+                success: function (result) {
+
+                    // Fill the form data
+                    var user_data = JSON.parse(checkCookieData('user_data'));
+                    if (user_data !== null)
+                    {
+                        fill_options(user_data.user_id);
+                    }
+
+                    // Display the notification
+                    bootoast.toast({
+                       message: 'Your transaction is successfully!!',
+                       type: 'success',
+                       position: 'top-center',
+                       timeout: 10,
+                       animationDuration: 300,
+                       dismissible: true
+                    });
+
+                },
+                async: false,
+                cache: false,
+                timeout: 10000,
+                processData: false
+            });
+        };
+
+    </script>
+{% endblock %}

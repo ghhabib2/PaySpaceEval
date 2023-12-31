@@ -36,3 +36,27 @@ class AddressInfo(models.Model):
     last_updated = models.DateTimeField(help_text="Last updated time", null=True, blank=True)
 
 
+class Transaction(models.Model):
+    """
+    Transaction serializer class
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    from_address_id = models.ForeignKey(Address, on_delete=models.CASCADE, related_name='from_address_id',
+                                   help_text="Related Address", null=False, blank=False)
+    to_address = models.CharField(max_length=150, help_text="Output address value")
+    block_index = models.IntegerField(help_text="Block Index", default=0)
+    block_height = models.IntegerField(help_text="Block Height", default=0)
+    hash = models.CharField(help_text="Transaction hash")
+    total = models.IntegerField(help_text="Total amount", default=0)
+    fees = models.IntegerField(help_text="Fees", default=0)
+    size = models.IntegerField(help_text="Size", default=0)
+    vsize = models.IntegerField(help_text="vSize", default=0)
+    preference = models.CharField(help_text="Preference", default="")
+    relayed_by = models.CharField(help_text="Relayed by", default="")
+    received = models.DateTimeField(help_text="Received time", null=True, blank=True)
+    ver = models.IntegerField(help_text="ver", default=0)
+    double_spend = models.BooleanField(help_text="Double Spend flag")
+    vin_sz = models.IntegerField(help_text="vin_sz", default=0)
+    vout_sz = models.IntegerField(help_text="vout_sz", default=0)
+    confirmations = models.IntegerField(help_text="Confirmations")
+

@@ -12,11 +12,11 @@ application = get_wsgi_application()
 blockchain_manager = blockchain.BlockChain()
 
 data = asyncio.run(blockchain_manager.send_transaction(
-    input_address="tb1q7kwcglyj8gzvlt8xsmrg080fyrp55r9papjrye",
+    input_address="tb1q20d9ms9cz4nq6hgkcczp4lyjg8plh2cqfxkgg4",
     output_address="tb1qp8plnpf0fd67f4ldkxjltcgs52us9tcm59eudv",
     value=10,
-    public_keys=["02f5c60f6f5d5f1db0d6c72d732eec5f374fbe53ddd3d3ab2ac082469ba8279bb4"],
-    private_kes=["a09c4d687c47e5f939e4d3748c8cf0aa217a528454d81d625a618f35b516d635"])
+    public_keys=["0209080758e248d0a78136970b3cc5d9b0d18098393be64becf109dde73501192a"],
+    private_kes=["2c9543bcf7c6e74adee97c30832909ec09c86a2fc97df98dc8ac63b831381830"])
 )
 
 

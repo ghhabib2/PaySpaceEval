@@ -1,7 +1,7 @@
 {% extends 'master.html' %}
 
 {% block title %}
-    Address Detials
+    Address Search Details
 {% endblock %}
 
 
@@ -11,8 +11,7 @@
         <div class="header-sub-title">
             <nav class="breadcrumb breadcrumb-dash">
                 <a href="home" class="breadcrumb-item"><i class="anticon anticon-home m-r-5"></i>Home</a>
-                <a class="breadcrumb-item" href="addresses">Addresses</a>
-                <span class="breadcrumb-item active">Address Details</span>
+                <span class="breadcrumb-item active">Address Search Details</span>
             </nav>
         </div>
     </div>
@@ -22,6 +21,10 @@
         </form>
         <div class="card-body">
             <div class="bg-white text-center p-t-2 p-b-2" id="address-qr-code">
+            </div>
+            <div class="bg-light form-group row">
+                <label for="innerAddressVal" class="col-sm-3 col-form-label">Inner Address:</label>
+                <label class="col-sm-9 col-form-label" id="innerAddressVal"></label>
             </div>
             <div class="bg-light form-group row">
                 <label for="addressVal" class="col-sm-3 col-form-label">Address:</label>
@@ -73,16 +76,16 @@
         $(document).ready(()=>{
            const queryString = window.location.search;
             // Check if the user came here after registration.
-           if (!queryString.includes('addressID')){
+           if (!queryString.includes('address')){
                // User should not be able to use this page if there is no address associated to the URL
-               window.location.href = 'addresses';
+               window.location.href = 'home';
            }
 
            // Read the details for the address
             const urlParams = new URLSearchParams(queryString);
-           if (urlParams.has('addressID')) {
-              const address_id = urlParams.get('addressID');
-              getAddressDetials(address_id)
+           if (urlParams.has('address')) {
+              const address = urlParams.get('address');
+              getAddressDetials(address)
            }
         });
 
@@ -90,16 +93,16 @@
          * Get the Address Detials from the endpoint
          * @param address_id Address ID to be used
          */
-        var getAddressDetials = (address_id) => {
+        var getAddressDetials = (address) => {
 
             const tokenizers = $('[name=csrfmiddlewaretoken]').attr('value'); // Use your method to get the CSRF token
 
             const payload = {
-                "address_id": address_id
+                "address": address
             };
 
             $.ajax({
-                url: 'api/v1/adr/rest/read_address_details/',
+                url: 'api/v1/adr/rest/read_address_search_details/',
                 type: 'POST',
                 data: JSON.stringify(payload),
                 dataType: 'json',
@@ -147,6 +150,7 @@
          */
         var fillDetailData = (data) =>{
             $("#address-qr-code").html('<img width="200px" height="200px" alt="Address QR Code" src="data:image/png;base64,'+ data.qrt_code_str +'" >');
+            $("#innerAddressVal").text(data.inner_address);
             $("#addressVal").text(data.address);
             $("#total-receivedVal").text(data.total_received);
             $("#total-sentVal").text(data.total_sent);
