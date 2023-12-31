@@ -4,6 +4,7 @@ from app import settings
 from .network import send_get_request, send_post_request, send_secured_request, send_secured_async_request
 from .convertors import AddressConvertor, WalletConvertor
 from  serializers.blockchain_serializers import Address, Wallet
+from  serializers.transactions_endpoint_serializers import TransactionResultSerializer
 import blockcypher
 
 
@@ -85,7 +86,7 @@ class BlockChain(object):
             """
             Generate an unsigned transaction based on the addresses
             """
-
+            # TODO : Fee calculator
             payload = {
                 "fees" : 1,
                 "inputs": [
@@ -132,31 +133,29 @@ class BlockChain(object):
 
 
         tx_to_sign = unsigned_tx["tosign"]
-        pub_key_witness = [str(unsigned_tx["tx"]["outputs"][0]["script"])]
-        print(list(pub_key_witness))
-        signed_tx = __sign_transaction(tx_to_sign=tx_to_sign,
+
+        final_signatures = []
+        final_public_keys = []
+
+        for signiure in tx_to_sign:
+            final_signatures.append(__sign_transaction(tx_to_sign=[signiure],
                                        priv_key=list(private_kes),
-                                       pub_keys= list(public_keys))
+                                       pub_keys= list(public_keys))[0]+'01')
+            final_public_keys.append(public_keys[0])
         """
         Generates the list of signatures to be send
         """
 
         final_payload = unsigned_tx
 
-        final_payload["signatures"] = [signed_tx[0]+'01']
-        final_payload["pubkeys"] = public_keys
-
-
-        print(json.dumps(final_payload))
-
-        print("\n")
+        final_payload["signatures"] = final_signatures
+        final_payload["pubkeys"] = final_public_keys
 
 
         address_to_use = f"{self.__transaction_end_point}/send?token=0d1ac92ec45448089e2c0f42fece0276"
 
+
         data = await send_secured_async_request(url=address_to_use, payload=final_payload)
-        """
-        Sending the transaction to the endpoint and returning the results
-        """
+
 
         return data

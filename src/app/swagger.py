@@ -1,6 +1,7 @@
 from utils.swagger import XcodeAutoSchema
 from serializers.user_endpoint_serialzers import AddUserSerializer, LoggedInUserSerializer
 from serializers.address_endpoint_serializers import AddressResultSerializer, AddressDetailResultSerializer
+from serializers.transactions_endpoint_serializers import TransactionResultSerializer
 from rest_framework import serializers
 
 # Begin Users Schemas
@@ -60,3 +61,27 @@ class GetAddressDetialsXcodeAutoSchema(XcodeAutoSchema):
             400: "Bad Request"
         }
 # End Address Schemas
+
+# Begin Transactions Schemas
+class SendTransactionXcodeAutoSchema(XcodeAutoSchema):
+    python_template = "swagger/users/add_none_admin_user/python_sample.html"
+
+    @classmethod
+    def responses(cls):
+        return {
+            201: TransactionResultSerializer(),
+            500: "Internal Server Error",
+            400: "Bad Request"
+        }
+
+class GetTransactionsListXcodeAutoSchema(XcodeAutoSchema):
+    python_template = "swagger/users/add_none_admin_user/python_sample.html"
+
+    @classmethod
+    def responses(cls):
+        return {
+            200: serializers.ListSerializer(child=TransactionResultSerializer()),
+            500: "Internal Server Error",
+            400: "Bad Request"
+        }
+# End Transactions Schemas

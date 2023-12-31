@@ -200,7 +200,7 @@
         /**
          * Clear the Table make it ready for the records
          */
-        var emptyOrderTable = function () {
+        var emptyAddressTable = function () {
             $("#address-table-body").find("tr:gt(0)").remove();
         }
 
@@ -251,7 +251,7 @@
                     success: function (result) {
                         // Add the user data to the cookies
                         // Clear the table
-                        emptyOrderTable();
+                        emptyAddressTable();
                         // Add the rows to the table
                         result.forEach(function (item) {
                             addAddressRowNew(item);
