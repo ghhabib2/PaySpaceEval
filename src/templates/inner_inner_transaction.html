@@ -103,9 +103,11 @@
             }
 
             const input_address_dropdown = '#input_address_dropdown';
+            const output_address_dropdown = '#output_address_dropdown';
 
             // Set the style for the Address dropdown
             $(input_address_dropdown).select2();
+            $(output_address_dropdown).select2();
 
             // Make sure we are checking the value when it is changing
             $(input_address_dropdown).on("change", () => {
@@ -270,10 +272,11 @@
          */
         var addAddressOptionNew = function (item) {
 
-            var newOption = $('<option>').val(item.address_id).text(item.address);
+            var newOption1 = $('<option>').val(item.address_id).text(item.address);
+            var newOption2 = $('<option>').val(item.address_id).text(item.address);
 
-            $('#input_address_dropdown').append(newOption);
-            $('#output_address_dropdown').append(newOption);
+            $('#input_address_dropdown').append(newOption1);
+            $('#output_address_dropdown').append(newOption2);
         }
 
 
@@ -287,7 +290,7 @@
 
             const payload = {
                 "input_address_id": $('#input_address_dropdown').val(),
-                "output_address" : $("#output_address_dropdown").val(),
+                "output_address_id" : $("#output_address_dropdown").val(),
                 "amount" : $("#amount_txt").val()
             };
 
