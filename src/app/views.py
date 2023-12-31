@@ -13,13 +13,15 @@ from rest_framework.permissions import AllowAny
 from django.contrib.auth.models import User
 from django.utils.decorators import method_decorator
 from serializers.user_endpoint_serialzers import AddUserSerializer, LoginUserSerializer
-from serializers.address_endpoint_serializers import AddressRequestSerializer, AddressDetailRequestSerializer
+from serializers.address_endpoint_serializers import AddressRequestSerializer, AddressDetailRequestSerializer, \
+    AddressSearchRequestSerializer
 from serializers.transactions_endpoint_serializers import (TransactionRequestIOSerialize, TransactionRequestIISerialize,
                                                            TransactionResultSerializer)
 from django.contrib.auth.hashers import make_password
 from .swagger import (AddUserXcodeAutoSchema, LoginUserXcodeAutoSchema, GenerateAddressXcodeAutoSchema,
                       GenerateAddressListXcodeAutoSchema, GetAddressDetialsXcodeAutoSchema,
-                      SendTransactionXcodeAutoSchema, GetTransactionsListXcodeAutoSchema)
+                      SendTransactionXcodeAutoSchema, GetTransactionsListXcodeAutoSchema,
+                      GetAddressSearchDetialsXcodeAutoSchema)
 from utils.blockchain import BlockChain
 from . import settings
 from . import models
@@ -70,7 +72,18 @@ class AppPages:
         :param request:
         :return:
         """
-        return render(request, 'address_details.html', {'name': 'Habib', 'title': "Addresse Details"})
+        return render(request, 'address_details.html', {'name': 'Habib',
+                                                        'title': "Address Details"})
+
+    @classmethod
+    def address_search_details(cls, request):
+        """
+        Render the Address Details page
+        :param request:
+        :return:
+        """
+        return render(request, 'address_search_details.html', {'name': 'Habib',
+                                                               'title': "Address Search Details"})
 
 
     @classmethod
@@ -600,6 +613,163 @@ class AddressManagement(viewsets.ViewSet):
                         # Raise the error that no data found
                         raise FileNotFoundError("The information is not available!")
 
+            except Exception as ex:
+                """
+                Return internal process error
+                """
+                response_data = {
+                    "error": f"There is an internal process error. Error: {ex}",
+                    "message": ""
+                }
+                return Response(response_data, content_type="application/json",
+                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        else:
+            """
+            Rerun data validation error
+            """
+            response_data = {
+                "error": "The data is not validated. Not able to proceed.",
+                "message": ""
+            }
+            return Response(response_data, content_type="application/json", status=status.HTTP_400_BAD_REQUEST)
+
+    @method_decorator(
+        decorator=swagger_auto_schema(
+            operation_summary="Return  the details of the address searched by the user",
+            operation_description="""
+                               Return the details of the address searched by the user
+
+                               Parameters:
+                               -----------
+
+                               - **request** (`HttpRequest`): Here is the list of parameters:
+                                   - `address` : The address user searched
+
+                               Returns:
+                               --------
+
+                               - **`HttpResponse`**: Returning the address details information
+                               """,
+            responses=GetAddressSearchDetialsXcodeAutoSchema.responses(),
+            auto_schema=GetAddressSearchDetialsXcodeAutoSchema,
+            tags=['Address Endpoints']
+        )
+    )
+    @action(methods=['post'],
+            detail=False,
+            url_path='read_address_search_details',
+            permission_classes=[AllowAny, ])
+    def read_address_search_details(self, request):
+        """
+        Retrieve all address lists for a user.
+
+        """
+
+        serializer = AddressSearchRequestSerializer(data=request.data)
+        if serializer.is_valid():
+            try:
+
+                """
+                Retrieve the user information
+                """
+
+                address = request.data['address']
+                address_to_be_used : QuerySet[models.Address] = models.Address.objects.filter(address=address)
+
+                if address_to_be_used.exists():
+
+                    # Read the details
+                    address_details : QuerySet[models.Address] = models.AddressInfo.objects.filter(
+                        address_id=address_to_be_used.first().id)
+                    # Check if the time difference if it is more than 30 seconds
+                    time_difference = (datetime.now() -
+                                       datetime
+                                       .fromisoformat(str(address_details.first().last_updated))
+                                       .replace(tzinfo=None).replace(tzinfo=None))
+
+                    if time_difference.total_seconds() > 30:
+
+                        # update the database again
+                        record_to_update = address_details.first()
+                        block_chain_processor = BlockChain()
+                        address_info = block_chain_processor.check_address_status(
+                            wallet_address=address_to_be_used.first().address)
+
+                        record_to_update.total_received = address_info.total_received
+                        record_to_update.total_sent = address_info.total_sent
+                        record_to_update.balance = address_info.balance
+                        record_to_update.unconfirmed_balance = address_info.unconfirmed_balance
+                        record_to_update.unconfirmed_n_tx = address_info.unconfirmed_n_tx
+                        record_to_update.final_balance = address_info.final_balance
+                        record_to_update.final_n_tx = address_info.final_n_tx
+                        record_to_update.n_tx = address_info.n_tx
+                        record_to_update.last_updated = datetime.now()
+
+                        record_to_update.save()
+
+                        response_data = {
+                            "inner_address": True,
+                            "address": address_to_be_used.first().address,
+                            "total_received": address_info.total_received,
+                            "total_sent": address_info.total_sent,
+                            "balance": address_info.balance,
+                            "unconfirmed_balance": address_info.unconfirmed_balance,
+                            "final_balance": address_info.final_balance,
+                            "n_tx": address_info.n_tx,
+                            "unconfirmed_n_tx": address_info.unconfirmed_n_tx,
+                            "final_n_tx": address_info.final_n_tx,
+                            "last_updated": datetime.now()
+                        }
+
+                    else:
+                        # return the result
+                        response_data = {
+                            "inner_address": True,
+                            "address": address_to_be_used.first().address,
+                            "total_received": address_details.first().total_received,
+                            "total_sent": address_details.first().total_sent,
+                            "balance": address_details.first().balance,
+                            "unconfirmed_balance": address_details.first().unconfirmed_balance,
+                            "final_balance": address_details.first().final_balance,
+                            "n_tx": address_details.first().n_tx,
+                            "unconfirmed_n_tx": address_details.first().unconfirmed_n_tx,
+                            "final_n_tx": address_details.first().final_n_tx,
+                            "last_updated": address_details.first().last_updated
+                        }
+
+                    return Response(response_data, content_type="application/json",
+                                    status=status.HTTP_200_OK)
+                else:
+                    # Check for the online available information
+                    block_chain_processor = BlockChain()
+                    address_info = block_chain_processor.check_address_status(
+                        wallet_address=address)
+
+                    if address_info is not None:
+
+                        response_data = {
+                            "inner_address" : False,
+                            "address": address,
+                            "total_received": address_info.total_received,
+                            "total_sent": address_info.total_sent,
+                            "balance": address_info.balance,
+                            "unconfirmed_balance": address_info.unconfirmed_balance,
+                            "final_balance": address_info.final_balance,
+                            "n_tx": address_info.n_tx,
+                            "unconfirmed_n_tx": address_info.unconfirmed_n_tx,
+                            "final_n_tx": address_info.final_n_tx,
+                            "last_updated": datetime.now()
+                        }
+
+                        return Response(response_data, content_type="application/json",
+                                        status=status.HTTP_200_OK)
+                    else:
+                        response_data = {
+                            "error": f"No result found!",
+                            "message": ""
+                        }
+                        return Response(response_data, content_type="application/json",
+                                        status=status.HTTP_404_NOT_FOUND)
             except Exception as ex:
                 """
                 Return internal process error

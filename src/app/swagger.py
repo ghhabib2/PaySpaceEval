@@ -1,6 +1,7 @@
 from utils.swagger import XcodeAutoSchema
 from serializers.user_endpoint_serialzers import AddUserSerializer, LoggedInUserSerializer
-from serializers.address_endpoint_serializers import AddressResultSerializer, AddressDetailResultSerializer
+from serializers.address_endpoint_serializers import (AddressResultSerializer, AddressDetailResultSerializer,
+                                                      AddressSearchDetailResultSerializer)
 from serializers.transactions_endpoint_serializers import TransactionResultSerializer
 from rest_framework import serializers
 
@@ -58,6 +59,18 @@ class GetAddressDetialsXcodeAutoSchema(XcodeAutoSchema):
         return {
             200: AddressDetailResultSerializer(),
             500: "Internal Server Error",
+            400: "Bad Request"
+        }
+
+class GetAddressSearchDetialsXcodeAutoSchema(XcodeAutoSchema):
+    python_template = "swagger/users/add_none_admin_user/python_sample.html"
+
+    @classmethod
+    def responses(cls):
+        return {
+            200: AddressSearchDetailResultSerializer(),
+            500: "Internal Server Error",
+            404: "No result found",
             400: "Bad Request"
         }
 # End Address Schemas
