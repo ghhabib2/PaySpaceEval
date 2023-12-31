@@ -33,6 +33,6 @@ class AddressInfo(models.Model):
     n_tx = models.IntegerField(help_text="Number of transactions")
     unconfirmed_n_tx = models.IntegerField(help_text="Number of unconfirmed transactions")
     final_n_tx = models.IntegerField(help_text="Final transaction")
-    tx_url = models.CharField(help_text="Transaction Url")
+    last_updated = models.DateTimeField(help_text="Last updated time", null=True, blank=True)
 
 
