@@ -631,10 +631,8 @@ class TransactionsManagement(viewsets.ViewSet):
                         -----------
 
                         - **request** (`HttpRequest`): Here is the list of parameters:
-                            - `input_address` : Input Address for transaction
+                            - `input_address_id` : Input Address for transaction
                             - `output_address` : Output Address for transaction
-                            - `private_key` : Private key for input address
-                            - `public_key` : Public key for input address
                             - `amount` : Amount of the transaction
 
                         Returns:
@@ -725,6 +723,171 @@ class TransactionsManagement(viewsets.ViewSet):
                 transaction_to_be_stored = models.Transaction()
 
                 transaction_to_be_stored.from_address_id = address_to_be_used
+                transaction_to_be_stored.to_address = transaction_result.to_address
+                transaction_to_be_stored.block_height = transaction_result.block_height
+                transaction_to_be_stored.block_index = transaction_result.block_index
+                transaction_to_be_stored.hash = transaction_result.hash
+                transaction_to_be_stored.total = transaction_result.total
+                transaction_to_be_stored.fees = transaction_result.fees
+                transaction_to_be_stored.size = transaction_result.size
+                transaction_to_be_stored.vsize = transaction_result.vsize
+                transaction_to_be_stored.preference = transaction_result.preference
+                transaction_to_be_stored.relayed_by = transaction_result.relayed_by
+                transaction_to_be_stored.received = transaction_result.received
+                transaction_to_be_stored.ver = transaction_result.ver
+                transaction_to_be_stored.double_spend = transaction_result.double_spend
+                transaction_to_be_stored.vin_sz = transaction_result.vin_sz
+                transaction_to_be_stored.vout_sz = transaction_result.vout_sz
+                transaction_to_be_stored.confirmations = transaction_result.confirmations
+
+                transaction_to_be_stored.save()
+
+                response_data = {
+                    "from_address": transaction_result.from_address,
+                    "to_address": transaction_result.to_address,
+                    "block_index": transaction_result.block_index,
+                    "block_height": transaction_result.block_height,
+                    "hash": transaction_result.hash,
+                    "total": transaction_result.total,
+                    "fees": transaction_result.fees,
+                    "size": transaction_result.size,
+                    "vsize": transaction_result.vsize,
+                    "preference": transaction_result.preference,
+                    "relayed_by": transaction_result.relayed_by,
+                    "received": transaction_result.received,
+                    "ver": transaction_result.ver,
+                    "double_spend": transaction_result.double_spend,
+                    "vin_sz": transaction_result.vin_sz,
+                    "vout_sz": transaction_result.vout_sz,
+                    "confirmations": transaction_result.confirmations
+                }
+
+                return Response(response_data, content_type="application/json",
+                                status=status.HTTP_201_CREATED)
+            except Exception as ex:
+                """
+                Return internal process error
+                """
+                response_data = {
+                    "error": f"There is an internal process error. Error: {ex}",
+                    "message": ""
+                }
+                return Response(response_data, content_type="application/json",
+                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        else:
+            """
+            Rerun data validation error
+            """
+            response_data = {
+                "error": "The data is not validated. Not able to proceed.",
+                "message": ""
+            }
+            return Response(response_data, content_type="application/json", status=status.HTTP_400_BAD_REQUEST)
+
+    @method_decorator(
+        decorator=swagger_auto_schema(
+            operation_summary="Send transaction Inner to Inner",
+            operation_description="""
+                            Send transaction from inner address to another inner address
+
+                            Parameters:
+                            -----------
+
+                            - **request** (`HttpRequest`): Here is the list of parameters:
+                                - `input_address_id` : Input Address for transaction
+                                - `output_address_id` : Output Address for transaction
+                                - `amount` : Amount of the transaction
+
+                            Returns:
+                            --------
+
+                            - **`HttpResponse`**: Returning the address information
+                            """,
+            responses=SendTransactionXcodeAutoSchema.responses(),
+            auto_schema=SendTransactionXcodeAutoSchema,
+            tags=['Transaction Endpoints']
+        )
+    )
+    @action(methods=['post'],
+            detail=False,
+            url_path='send_transaction_ii',
+            permission_classes=[AllowAny, ])
+    def send_transaction_ii(self, request):
+        """
+        Generating an addrress for the user
+        :param request:
+        :return: The generated results
+        """
+
+        serializer = TransactionRequestIISerialize(data=request.data)
+        if serializer.is_valid():
+            try:
+                """
+                Extract the data from the request
+                """
+                input_address_id = serializer.validated_data['input_address_id']
+                output_address_id = serializer.validated_data['output_address_id']
+
+                input_address_to_be_used = models.Address.objects.get(pk=input_address_id)
+                output_address_to_be_used = models.Address.objects.get(pk=output_address_id)
+
+                input_address = input_address_to_be_used.address
+                output_address = output_address_to_be_used.address
+                private_key = input_address_to_be_used.private
+                public_key = input_address_to_be_used.public
+                amount = serializer.validated_data['amount']
+
+                """
+                Send the transaction request
+                """
+                block_chain_processor = BlockChain()
+
+                data = asyncio.run(block_chain_processor.send_transaction(
+                    input_address=input_address,
+                    output_address=output_address,
+                    private_kes=[private_key],
+                    public_keys=[public_key],
+                    value=amount
+                ))
+
+                """
+                Check if there is any error inside the data
+                """
+                assert 'errors' not in data
+
+                """
+                Map the data to the Transaction Serializer
+                """
+                transaction_result = TransactionResultSerializer()
+
+                transaction_result.from_address = data["tx"]["inputs"][0]["addresses"][0]
+                transaction_result.to_address = data["tx"]["outputs"][0]["addresses"][0]
+                transaction_result.block_height = data["tx"]["block_height"]
+                transaction_result.block_index = data["tx"]["block_index"]
+                transaction_result.hash = data["tx"]["hash"]
+                transaction_result.total = data["tx"]["total"]
+                transaction_result.fees = data["tx"]["fees"]
+                transaction_result.size = data["tx"]["size"]
+                transaction_result.vsize = data["tx"]["vsize"]
+                transaction_result.preference = data["tx"]["preference"]
+                transaction_result.relayed_by = data["tx"]["relayed_by"]
+                transaction_result.received = data["tx"]["received"]
+                transaction_result.ver = data["tx"]["ver"]
+                transaction_result.double_spend = data["tx"]["double_spend"]
+                transaction_result.vin_sz = data["tx"]["vin_sz"]
+                transaction_result.vout_sz = data["tx"]["vout_sz"]
+                transaction_result.confirmations = data["tx"]["confirmations"]
+
+                """
+                Read the data for input address
+                """
+
+                """
+                Add a record to the 
+                """
+                transaction_to_be_stored = models.Transaction()
+
+                transaction_to_be_stored.from_address_id = input_address_to_be_used
                 transaction_to_be_stored.to_address = transaction_result.to_address
                 transaction_to_be_stored.block_height = transaction_result.block_height
                 transaction_to_be_stored.block_index = transaction_result.block_index
