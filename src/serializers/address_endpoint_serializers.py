@@ -29,6 +29,7 @@ class AddressDetailRequestSerializer(AddressRequestSerializer):
     address_id = serializers.UUIDField(required=True)
 
 class AddressDetailResultSerializer(AddressResultSerializer):
+    qrt_code_str = serializers.CharField(help_text="QR-Code image")
     address = serializers.CharField(help_text="Wallet Address")
     total_received = serializers.IntegerField(help_text="Total amount received in the Wallet")
     total_sent = serializers.IntegerField(help_text="Total sent by the wallet")
@@ -46,6 +47,7 @@ class AddressSearchDetailResultSerializer(AddressResultSerializer):
     """
     Address Search Detail Result Serializer
     """
+    qrt_code_str = serializers.CharField(help_text="QR-Code image")
     inner_address = serializers.BooleanField(help_text="Inner address")
     address = serializers.CharField(help_text="Wallet Address")
     total_received = serializers.IntegerField(help_text="Total amount received in the Wallet")

@@ -20,6 +20,8 @@
             {% csrf_token %}
         </form>
         <div class="card-body">
+            <div class="bg-white text-center p-t-2 p-b-2" id="address-qr-code">
+            </div>
             <div class="bg-light form-group row">
                 <label for="innerAddressVal" class="col-sm-3 col-form-label">Inner Address:</label>
                 <label class="col-sm-9 col-form-label" id="innerAddressVal"></label>
@@ -147,6 +149,7 @@
          * @param data Data to be used for filling the form in JSON format
          */
         var fillDetailData = (data) =>{
+            $("#address-qr-code").html('<img width="200px" height="200px" alt="Address QR Code" src="data:image/png;base64,'+ data.qrt_code_str +'" >');
             $("#innerAddressVal").text(data.inner_address);
             $("#addressVal").text(data.address);
             $("#total-receivedVal").text(data.total_received);
