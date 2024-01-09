@@ -11,7 +11,8 @@
     "COIN"  : "btc",
     "BlockCypher_BASE_ADDRESS" : "https://api.blockcypher.com/v1/",
     "BlockCypher_Wallet_Address": "addrs",
-    "BlockCypher_Transaction_Address": "txs"
+    "BlockCypher_Transaction_Address": "txs",
+    "BlockCypher_Token" : "0d1ac92ec45448089e2c0f42fece0276"
   },
   "UserManagement" : {
     "known_salt" : "ea7d8290e691ef503d180db62c0fa16d",

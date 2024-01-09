@@ -1,0 +1,22 @@
+import requests
+import json
+
+url = 'https://[server_address]/api/v1/txs/rest/send_transaction/'
+headers = {
+    'Content-Type': 'application/json'
+}
+
+payload = {
+    input_address_id : [input_address_id],
+    output_address : [output_address],
+    amount : [amount_to_be_transferred]
+}
+
+response = requests.post(url, headers=headers, json=payload)
+
+if response.status_code == 201:
+    json_data = json.loads(response.text)
+    print('API response:', json_data)
+else:
+    print('Error:', response.json())
+

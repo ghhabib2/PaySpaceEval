@@ -21,8 +21,6 @@ services:
     db:
         hostname: ${POSTGRES_HOST}
         image: postgres:13-alpine
-        ports:
-            - 5432:5432
         volumes:
             - ${POSTGRES_DATA_PATH}:/var/lib/postgresql/data
         environment:

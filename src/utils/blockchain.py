@@ -38,7 +38,7 @@ class BlockChain(object):
         :rtype: Address
         """
 
-        address_to_user = f"{self.__address_end_point}?bech32=true"
+        address_to_user = f"{self.__address_end_point}?token={settings.BlockCypher_Token}&bech32=true"
 
         # Send the request to generate
         data = send_post_request(address_to_user)
@@ -60,7 +60,7 @@ class BlockChain(object):
         :rtype: Wallet
         """
 
-        address_to_use = f"{self.__address_end_point}/{wallet_address}"
+        address_to_use = f"{self.__address_end_point}/{wallet_address}?token={settings.BlockCypher_Token}"
 
         data = send_get_request(address_to_use)
 
@@ -105,7 +105,7 @@ class BlockChain(object):
             Payload to be sent to the endpoint
             """
 
-            url = f"{self.__transaction_end_point}/new?token=0d1ac92ec45448089e2c0f42fece0276"
+            url = f"{self.__transaction_end_point}/new?token={settings.BlockCypher_Token}"
 
             result, code = send_secured_request(url=url,
                                         payload=json.dumps(payload))
@@ -152,7 +152,7 @@ class BlockChain(object):
         final_payload["pubkeys"] = final_public_keys
 
 
-        address_to_use = f"{self.__transaction_end_point}/send?token=0d1ac92ec45448089e2c0f42fece0276"
+        address_to_use = f"{self.__transaction_end_point}/send?token={settings.BlockCypher_Token}"
 
 
         data = await send_secured_async_request(url=address_to_use, payload=final_payload)

@@ -1,22 +1,19 @@
 import requests
 import json
 
-url = 'https://[server_address]/api/v1/users/rest/login_user/'
+url = 'https://[server_address]/api/v1/adr/rest/generate_address/'
 headers = {
     'Content-Type': 'application/json'
 }
 
 payload = {
-    username : [User name],
-    password : [Password of the user]
+    user_id = [user_id]
 }
 
 response = requests.post(url, headers=headers, json=payload)
 
-if response.status_code == 200:
+if response.status_code == 201:
     json_data = json.loads(response.text)
     print('API response:', json_data)
 else:
-    print('Error creating user:', response.json())
-
-
+    print('Error:', response.json())

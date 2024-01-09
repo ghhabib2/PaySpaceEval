@@ -32,7 +32,7 @@ class LoginUserXcodeAutoSchema(XcodeAutoSchema):
 
 # Begin Address Schemas
 class GenerateAddressXcodeAutoSchema(XcodeAutoSchema):
-    python_template = "swagger/users/add_none_admin_user/python_sample.html"
+    python_template = "swagger/address/generate_address/python_sample.html"
     @classmethod
     def responses(cls):
         return {
@@ -42,7 +42,7 @@ class GenerateAddressXcodeAutoSchema(XcodeAutoSchema):
         }
 
 class GenerateAddressListXcodeAutoSchema(XcodeAutoSchema):
-    python_template = "swagger/users/add_none_admin_user/python_sample.html"
+    python_template = "swagger/address/read_address_list/python_sample.html"
     @classmethod
     def responses(cls):
         return {
@@ -52,7 +52,7 @@ class GenerateAddressListXcodeAutoSchema(XcodeAutoSchema):
         }
 
 class GetAddressDetialsXcodeAutoSchema(XcodeAutoSchema):
-    python_template = "swagger/users/add_none_admin_user/python_sample.html"
+    python_template = "swagger/address/read_address_details/python_sample.html"
 
     @classmethod
     def responses(cls):
@@ -63,7 +63,7 @@ class GetAddressDetialsXcodeAutoSchema(XcodeAutoSchema):
         }
 
 class GetAddressSearchDetialsXcodeAutoSchema(XcodeAutoSchema):
-    python_template = "swagger/users/add_none_admin_user/python_sample.html"
+    python_template = "swagger/address/read_address_search_details/python_sample.html"
 
     @classmethod
     def responses(cls):
@@ -77,7 +77,19 @@ class GetAddressSearchDetialsXcodeAutoSchema(XcodeAutoSchema):
 
 # Begin Transactions Schemas
 class SendTransactionXcodeAutoSchema(XcodeAutoSchema):
-    python_template = "swagger/users/add_none_admin_user/python_sample.html"
+    python_template = "swagger/transactions/send_transaction/python_sample.html"
+
+    @classmethod
+    def responses(cls):
+        return {
+            201: TransactionResultSerializer(),
+            500: "Internal Server Error",
+            400: "Bad Request"
+        }
+
+
+class SendTransactionInnerXcodeAutoSchema(XcodeAutoSchema):
+    python_template = "swagger/transactions/send_transaction_ii/python_sample.html"
 
     @classmethod
     def responses(cls):
@@ -88,7 +100,7 @@ class SendTransactionXcodeAutoSchema(XcodeAutoSchema):
         }
 
 class GetTransactionsListXcodeAutoSchema(XcodeAutoSchema):
-    python_template = "swagger/users/add_none_admin_user/python_sample.html"
+    python_template = "swagger/transactions/read_transactions_list/python_sample.html"
 
     @classmethod
     def responses(cls):
