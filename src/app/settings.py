@@ -55,6 +55,7 @@ BlockCypher_COIN = data['BlockCypher']['COIN']
 BlockCypher_BASE_ADDRESS = data['BlockCypher']['BlockCypher_BASE_ADDRESS']
 BlockCypher_Wallet_Address = data['BlockCypher']['BlockCypher_Wallet_Address']
 BlockCypher_Transaction_Address = data['BlockCypher']['BlockCypher_Transaction_Address']
+BlockCypher_Token = data['BlockCypher']['BlockCypher_Token']
 
 # User Management
 # ----------------

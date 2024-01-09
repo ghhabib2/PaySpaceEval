@@ -25,7 +25,7 @@ from django.contrib.auth.hashers import make_password
 from .swagger import (AddUserXcodeAutoSchema, LoginUserXcodeAutoSchema, GenerateAddressXcodeAutoSchema,
                       GenerateAddressListXcodeAutoSchema, GetAddressDetialsXcodeAutoSchema,
                       SendTransactionXcodeAutoSchema, GetTransactionsListXcodeAutoSchema,
-                      GetAddressSearchDetialsXcodeAutoSchema)
+                      GetAddressSearchDetialsXcodeAutoSchema, SendTransactionInnerXcodeAutoSchema)
 from utils.blockchain import BlockChain
 from . import settings
 from . import models
@@ -234,7 +234,7 @@ class UserManagement(viewsets.ViewSet):
                 - **`HttpResponse`**: Return the response code with its content
                 """,
             responses=LoginUserXcodeAutoSchema.responses(),
-            auto_schema=AddUserXcodeAutoSchema,
+            auto_schema=LoginUserXcodeAutoSchema,
             tags=['User Endpoints']
         )
     )
@@ -321,8 +321,8 @@ class AddressManagement(viewsets.ViewSet):
 
                     - **`HttpResponse`**: Returning the address information
                     """,
-            responses=GenerateAddressListXcodeAutoSchema.responses(),
-            auto_schema=GenerateAddressListXcodeAutoSchema,
+            responses=GenerateAddressXcodeAutoSchema.responses(),
+            auto_schema=GenerateAddressXcodeAutoSchema,
             tags=['Address Endpoints']
         )
     )
@@ -421,8 +421,8 @@ class AddressManagement(viewsets.ViewSet):
 
                         - **`HttpResponse`**: Returning the address information
                         """,
-            responses=GenerateAddressXcodeAutoSchema.responses(),
-            auto_schema=GenerateAddressXcodeAutoSchema,
+            responses=GenerateAddressListXcodeAutoSchema.responses(),
+            auto_schema=GenerateAddressListXcodeAutoSchema  ,
             tags=['Address Endpoints']
         )
     )
@@ -1021,8 +1021,8 @@ class TransactionsManagement(viewsets.ViewSet):
 
                             - **`HttpResponse`**: Returning the address information
                             """,
-            responses=SendTransactionXcodeAutoSchema.responses(),
-            auto_schema=SendTransactionXcodeAutoSchema,
+            responses=SendTransactionInnerXcodeAutoSchema.responses(),
+            auto_schema=SendTransactionInnerXcodeAutoSchema,
             tags=['Transaction Endpoints']
         )
     )
