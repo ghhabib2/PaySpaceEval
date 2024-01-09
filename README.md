@@ -1,5 +1,7 @@
 # PaySpaceEval
 
+![System Architecture](paySpaceArchitecher.png)
+
 ## Introduction
 `Payspace Eval` is a sample web-base portal created for registering and transaction of crypto-currencies between addresses. 
 
